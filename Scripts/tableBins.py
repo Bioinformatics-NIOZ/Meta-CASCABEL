@@ -37,7 +37,7 @@ else:
     os.system("touch " +snakemake.output["metabat_out"])
 
 #maxbin
-if snakemake.config["das"]["maxbin"]["run"]=="T" or snakemake.config["BINNING"] == "MAXBIN":
+if (snakemake.config["das"]["maxbin"]["run"]=="T" and snakemake.config["BINNING"]=="DAS") or snakemake.config["BINNING"] == "MAXBIN":
     for file in os.listdir(output_dir_maxbin):
         if file.endswith(file_extension_maxbin):
             #i = i+1
@@ -50,7 +50,7 @@ else:
     os.system("touch " +snakemake.output["maxbin_out"])
 
 #BinSanity
-if snakemake.config["das"]["binsanity"]["run"]=="T" or snakemake.config["BINNING"] == "BINSANITY":
+if (snakemake.config["das"]["binsanity"]["run"]=="T" and snakemake.config["BINNING"]=="DAS") or snakemake.config["BINNING"] == "BINSANITY":
     try:
         for file in os.listdir(output_dir_binsanity):
             if file.endswith(file_extension_binsanity) and (file.startswith("final") or (bin_sanity_low_completion == "T" and file.startswith("low_"))):
@@ -73,13 +73,13 @@ else:
     os.system("touch " +snakemake.output["binsanity_out"])
 
 #CONCOCT
-if snakemake.config["das"]["concoct"]["run"]=="T" or snakemake.config["BINNING"] == "CONCOCT":
+if (snakemake.config["das"]["concoct"]["run"]=="T" and snakemake.config["BINNING"]=="DAS") or snakemake.config["BINNING"] == "CONCOCT":
     os.system("cat "+ concoct_clustering + " | awk -F\",\" 'NR>1{print $1\"\tconcoct.\"$2}'   > " +snakemake.output["concoct_out"])
 else: 
     os.system("touch " +snakemake.output["concoct_out"])
 
 # Semibin2
-if snakemake.config["das"]["semibin"]["run"]=="T" or snakemake.config["BINNING"] == "SEMIBIN":
+if (snakemake.config["das"]["semibin"]["run"]=="T" and snakemake.config["BINNING"]=="DAS") or snakemake.config["BINNING"] == "SEMIBIN":
     for file in os.listdir(output_dir_semibin):
         if file.endswith(file_extension_semibin):
             splittedName = re.split('\.|_',file) #the name is SemiBin_##.fa
