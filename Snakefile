@@ -67,10 +67,10 @@ if config["trimm"]["trimming"].lower() == "t":
             tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["QC"]["onRawReads"].lower() == "t"
             else []
         output:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-            read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq",
+            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq.gz",
+            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz",
+            read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq.gz",
             log="{PROJECT}/runs/{run}/{sample}_data/trimmed/trimmomatic.log"
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/trimmomatic.benchmark"
@@ -131,8 +131,8 @@ else:
             tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["QC"]["onRawReads"].lower() == "t"
             else []
         output:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz",
             no_trimm="{PROJECT}/runs/{run}/{sample}_data/no_trimm.txt"
         shell:
             """
@@ -148,8 +148,8 @@ else:
 if config["QC"]["onTrimmedReads"].lower() == "t":
     rule sequali_trimmed_reads:
         input:
-            r1="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            r2="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq"
+            r1="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            r2="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz"
         output:
             o1="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html",
             s2="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.json",
@@ -172,9 +172,9 @@ if config["TAXONOMY"]["PROFILING"] == "KRAKEN" or config["TAXONOMY"]["PROFILING"
         """
         input:
             fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
+            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
             rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq"
+            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz"
         params:
             "{PROJECT}/runs/{run}/{sample}_data/taxonomy/"
         output:
@@ -225,9 +225,9 @@ if config["TAXONOMY"]["PROFILING"] == "KAIJU" or config["TAXONOMY"]["PROFILING"]
         """
         input:
             fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
+            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
             rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq"
+            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz"
         params:
             "{PROJECT}/runs/{run}/{sample}_data/taxonomy/"
         output:
@@ -293,23 +293,24 @@ elif config["TAXONOMY"]["PROFILING"] == "ALL":
 if config["ASSEMBLER"] == "SPADES":
     rule fq2fasta:
         input:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz",
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta" if config["gzip_input"] == "F"
-            else "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq.gz"
+            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq.gz"
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/fq2fasta.benchmark"
+        conda:
+            "resources/envs/spades.yaml"
         shell:
             "fq2fa --merge {input.read1_paired} {input.read2_paired} {output}"
     rule concat_single_reads:
         input:
-            read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq",
-            read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq",
+            read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq.gz",
+            read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq.gz",
             tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
             else []
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq"
+            "{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq.gz"
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/concat_single_reads.benchmark"
         shell:
@@ -319,9 +320,8 @@ if config["ASSEMBLER"] == "SPADES":
     #with trimmomatic output. The above procedure is also used for IDBA UD. 
     rule meta_spades_to_fix:
         input:
-            reads_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta" if config["gzip_input"] == "F"
-            else "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq.gz",
-            read12_singles="{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq" if config["trimm"]["trimming"] == "T"
+            reads_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq.gz",
+            read12_singles="{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq.gz" if config["trimm"]["trimming"] == "T"
             else []
         output:
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/contigs_merged.fasta",
@@ -380,16 +380,17 @@ if config["ASSEMBLER"] == "SPADES":
             scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/scaffolds.fasta" if config["spades"]["merge_paired_reads"] == "F"
             else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/scaffolds_merged.fasta"
         output:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
-            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz",
+            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
         shell:
-            "mv {input.contigs} {output.contigs} && mv {input.scaffolds} {output.scaffolds}"
+            "gzip -c {input.contigs} {output.contigs} && gzip -c {input.scaffolds} {output.scaffolds}
+            rm -rf {input.contigs} && rm -rf {input.scaffolds}"
 
 if config["ASSEMBLER"] == "MEGAHIT":
     rule megahit:
         input:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz",
             tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
             else []
         output:
@@ -408,20 +409,21 @@ if config["ASSEMBLER"] == "MEGAHIT":
         input:
             contig="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/final.contigs.fa"
         output:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
-            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz",
+            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
         shell:
-            "mv {input.contig} {output.contigs} && ln -sr {output.contigs} {output.scaffolds}"
+            "gzip {input.contig}
+            mv {input.contig}.gz {output.contigs} && ln -sr {output.contigs} {output.scaffolds}"
 
 if config["ASSEMBLER"] == "IDBA":
     rule fq2fasta:
         input:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq.gz",
+            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq.gz",
             tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
             else []
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta"
+            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta.gz"
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/fq2fasta.benchmark"
         shell:
@@ -436,7 +438,7 @@ if config["ASSEMBLER"] == "IDBA":
     #For this reason, the pipe line uses my local installation, try to make it for all
     rule idba:
         input:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta"
+            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta.gz"
         output:
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/contig.fa",
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/scaffold.fa"
@@ -458,24 +460,25 @@ if config["ASSEMBLER"] == "IDBA":
             contig="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/contig.fa",
             scaffold="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/scaffold.fa"
         output:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
-            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz",
+            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
         shell:
-            "mv {input.contig} {output.contigs} && mv {input.scaffold} {output.scaffolds}"
+            "gzip -c {input.contigs} {output.contigs} && gzip -c {input.scaffolds} {output.scaffolds}
+            rm -rf {input.contigs} && rm -rf {input.scaffolds}"
 
 if config["ASSEMBLER"] == "ASSEMBLED":
     rule std_assembly:
         input:
             contigs=config["contigs"]
         output:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
-            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz",
+            scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
         shell:
             "ln -s {input.contigs} {output.contigs} && ln -s {input.contigs} {output.scaffolds}"
 
 rule quast_libs:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
     output:
         temp("{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/quast_lib_config.txt")
     shell:
@@ -483,7 +486,7 @@ rule quast_libs:
 
 rule quast_contigs:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/contigs/report.txt"
     params:
@@ -499,7 +502,7 @@ rule quast_contigs:
 
 rule quast_scaffolds:
     input:
-        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/scaffolds/report.txt"
     params:
@@ -522,24 +525,31 @@ if config["SPLIT_ASSEMBLY"] == "T":
     """
     rule split_assembly:
         input:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta"
+            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz"
+        params:
+            infile="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+            outfile="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta"
         conda:
             "resources/envs/concoct.yaml"
         shell:
             # "/opt/biolinux/anaconda2.2019.07/bin/cut_up_fasta.py -c {config[SPLIT_SIZE]} "
             # This pathway currently only works for ada, not ada94
             # "/opt/biolinux/anaconda/73/2022.05/envs/metacascabel_c_env/bin/cut_up_fasta.py  -c {config[SPLIT_SIZE]} "
-            "cut_up_fasta.py  -c {config[SPLIT_SIZE]} -o 0 -m {input.contigs} > {output}"
+            """
+            gunzip {input.contigs}
+            cut_up_fasta.py -c {config[SPLIT_SIZE]} -o 0 -m {params.infile} > {params.outfile}
+            gzip {params.infile} && gzip {params.outfile}
+            """
     rule std_splitted_assembly:
         input:
-            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta"
+            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz"
         output:
             flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt",
-            complete="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta"
+            complete="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta.gz"
         params:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
         shell:
             "mv {params.contigs} {output.complete} && mv {input} {params.contigs} "
             "&& echo \"contigs.fasta has been splitted by cut_up_fasta.py original contig file is: contigs.complete.fasta\" > {output.flag}"
