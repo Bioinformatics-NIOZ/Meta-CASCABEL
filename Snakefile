@@ -886,7 +886,7 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
             "resources/envs/concoct.yaml"
         shell:
             "concoct -l {config[concoct][min_contig_length]} -i {config[concoct][max_iteration]} -t {config[concoct][threads]} "
-            "--coverage_file {input.depth} --composition_file {input.assembly} {config[concoct][extra_params]}   -b {params}  > /dev/null 2>&1"
+            "--coverage_file {input.depth} --composition_file {input.assembly} {config[concoct][extra_params]} -b {params}  > /dev/null 2>&1"
     """
     We only need the bins in case that the user is running concoct alone, otherwise
     we only use the clustering file to DAS to create new bins. NOT anymore! now we run 
@@ -901,6 +901,8 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
             log="{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log"
         params:
             "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+        conda:
+            "resources/envs/concoct.yaml"
         shell:
             "extract_fasta_bins.py --output_path  {params} {input.assembly} {input.clustering} > {output.log}"
 elif (config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]!="T") or (config["BINNING"] != "CONCOCT" and config["BINNING"] != "DAS"):
