@@ -460,6 +460,8 @@ quast:
 # assembly. The following variable can take two values: CONTIGS or SCAFFOLDS   #
 # So deppending on this, the pipeline will continue the analysis with the      #
 # assembled contigs or with the assembled scaffolds.                           #
+# Not all assembly tools generate scaffolds, if you wan't to use scaffolds,    #
+# chose either SPADES or IDBA.                                                 #
 #------------------------------------------------------------------------------#
 ANALYSIS: "CONTIGS"
 
