@@ -483,6 +483,51 @@ if config["ASSEMBLER"] == "ASSEMBLED":
         shell:
             "ln -s {input.contigs} {output.contigs} && ln -s {input.contigs} {output.scaffolds}"
 
+if config["SPLIT_ASSEMBLY"] == "T":
+    """
+    This option will split the assembled reads into smaller chuncks.
+    In order to do not affect the downstream rules (previously implemented)
+    the splitted contig file is renamed as the original contig file and the original
+    is renamed as contigs.complete.fasta at the end
+    """
+    rule split_assembly:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz" if config["ANALYSIS"] == "CONTIGS"
+            else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz" if config["ANALYSIS"] == "CONTIGS"
+            else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.chunks.fasta.gz"
+        conda:
+            "resources/envs/concoct.yaml"
+        shell:
+            # "/opt/biolinux/anaconda2.2019.07/bin/cut_up_fasta.py -c {config[SPLIT_SIZE]} "
+            # This pathway currently only works for ada, not ada94
+            # "/opt/biolinux/anaconda/73/2022.05/envs/metacascabel_c_env/bin/cut_up_fasta.py  -c {config[SPLIT_SIZE]} "
+            """
+            cut_up_fasta.py -c {config[SPLIT_SIZE]} -o 0 -m {input} > {output}
+            """
+    rule std_splitted_assembly:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz" if config["ANALYSIS"] == "CONTIGS"
+            else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.chunks.fasta.gz"
+        output:
+            flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt",
+            complete="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta.gz" if config["ANALYSIS"] == "CONTIGS"
+            else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.complete.fasta.gz"
+        params:
+            infile="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz" if config["ANALYSIS"] == "CONTIGS"
+            else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
+        shell:
+            "mv {params.infile} {output.complete} && mv {input} {params.infile} "
+            "&& echo \"{config[ANALYSIS]}.fasta has been splitted by cut_up_fasta.py original {config[ANALYSIS]} file is: {config[ANALYSIS]}.complete.fasta\" > {output.flag}"
+            # "&& echo \"contigs.fasta has been splitted by cut_up_fasta.py original contig file is: contigs.complete.fasta\" > {output.flag}"
+else:
+    rule skip_split_assembly:
+        output:
+            flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt"
+        shell:
+            "echo \"{config[ANALYSIS]}.fasta has not been splitted\" > {output.flag}"
+
 rule quast_libs:
     input:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
@@ -493,7 +538,8 @@ rule quast_libs:
 
 rule quast_contigs:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
+        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz" if config["SPLIT_ASSEMBLY"] == "F"
+        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta.gz"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/contigs/report.txt"
     params:
@@ -509,7 +555,8 @@ rule quast_contigs:
 
 rule quast_scaffolds:
     input:
-        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz"
+        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta.gz" if config["SPLIT_ASSEMBLY"] == "F"
+        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.complete.fasta.gz"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/scaffolds/report.txt"
     params:
@@ -522,50 +569,6 @@ rule quast_scaffolds:
         "resources/envs/quast.yaml"
     shell:
         "quast.py -t {config[quast][threads]} -o {params} -s {config[quast][extra_params]}  {input.scaffolds}"
-
-if config["SPLIT_ASSEMBLY"] == "T":
-    """
-    This option will split the assembled reads into smaller chuncks.
-    In order to do not affect the downstream rules (previously implemented)
-    the splitted contig file is renamed as the original contig file and the original
-    is renamed as contigs.complete.fasta at the end
-    """
-    rule split_assembly:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz"
-        params:
-            infile="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
-            outfile="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta"
-        conda:
-            "resources/envs/concoct.yaml"
-        shell:
-            # "/opt/biolinux/anaconda2.2019.07/bin/cut_up_fasta.py -c {config[SPLIT_SIZE]} "
-            # This pathway currently only works for ada, not ada94
-            # "/opt/biolinux/anaconda/73/2022.05/envs/metacascabel_c_env/bin/cut_up_fasta.py  -c {config[SPLIT_SIZE]} "
-            """
-            gunzip {input.contigs}
-            cut_up_fasta.py -c {config[SPLIT_SIZE]} -o 0 -m {params.infile} > {params.outfile}
-            gzip {params.infile} && gzip {params.outfile}
-            """
-    rule std_splitted_assembly:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.chunks.fasta.gz"
-        output:
-            flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt",
-            complete="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta.gz"
-        params:
-            contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta.gz"
-        shell:
-            "mv {params.contigs} {output.complete} && mv {input} {params.contigs} "
-            "&& echo \"contigs.fasta has been splitted by cut_up_fasta.py original contig file is: contigs.complete.fasta\" > {output.flag}"
-else:
-    rule skip_split_assembly:
-        output:
-            flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt"
-        shell:
-            "echo \"contigs.fasta has not been splitted\" > {output.flag}"
 
 rule validate_assembly:
     input:
