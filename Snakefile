@@ -527,8 +527,9 @@ rule quast_libs:
 
 rule quast_contigs:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta" if config["SPLIT_ASSEMBLY"] == "F"
-        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta"
+        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta" 
+        if config["SPLIT_ASSEMBLY"] == "T" and config["ANALYSIS"] == "CONTIGS"
+        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/contigs/report.txt"
     params:
@@ -544,8 +545,9 @@ rule quast_contigs:
 
 rule quast_scaffolds:
     input:
-        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta" if config["SPLIT_ASSEMBLY"] == "F"
-        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.complete.fasta"
+        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.complete.fasta"
+        if config["SPLIT_ASSEMBLY"] == "T" and config["ANALYSIS"] == "SCAFFOLDS"
+        else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/scaffolds/report.txt"
     params:
@@ -557,7 +559,7 @@ rule quast_scaffolds:
     conda:
         "resources/envs/quast.yaml"
     shell:
-        "quast.py -t {config[quast][threads]} -o {params} -s {config[quast][extra_params]}  {input.scaffolds}"
+        "quast.py -t {config[quast][threads]} -o {params} -s {config[quast][extra_params]}  {input}"
 
 rule validate_assembly:
     input:
@@ -943,7 +945,7 @@ if config["BINNING"] == "BINSANITY" or (config["BINNING"] == "DAS" and config["d
         output:
             temp("{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/assembly_coverage_gt0.fasta")
         shell:
-            "cat {input.depth} | cut -f1 | grep -w -A1 --no-group-separator -F -f - {input.fasta}  > {output}" 
+            "cat {input.depth} | cut -f1 | grep -w -A1 --no-group-separator -F -f - {input.fasta}  > {output}"
     rule binsanity:
         input:
             depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_log.txt",
