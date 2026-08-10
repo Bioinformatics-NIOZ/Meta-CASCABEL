@@ -687,7 +687,8 @@ rule bwa_mem_mtx:
         r2=expand("{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",  PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run),
         idx="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_assembly.bwt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/bwa-mem_cmds.log"
+        log="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/bwa-mem_cmds.log",
+        depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"vs_{sample}_mapped_against_cross-assembly_sorted.bam"
     benchmark:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/bwamem.benchmark"
     params:
@@ -979,7 +980,9 @@ elif (config["BINNING"] == "DAS" and config["das"]["binsanity"]["run"]!="T") or 
 if config["BINNING"] == "SEMIBIN" or (config["BINNING"] == "DAS" and config["das"]["semibin"]["run"]=="T"):
     rule semibin:
         input:
-            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.bam",
+            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.bam"
+            if config["bwa"]["differential_coverage_matrix"] == "F"
+            else expand("{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"vs_{sample}_mapped_against_cross-assembly_sorted.bam", PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run),
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
