@@ -799,6 +799,14 @@ rule total_coverage:
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
         "awk -F'\\t' 'NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}'  {input} > {output}"
 
+rule maxbin_coverage:
+    input:
+        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
+    output:
+        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt"
+    shell:
+        "awk -F '\\t' -v col=\"CONTIGS_SPADESvs_{wildcards.sample}_mapped_against_cross-assembly_sorted.bam\" 'NR==1{{for (i=1; i<=NF; i++) if ($i == col){{c=i; break}}}} NR>1{{print $1\"\\t\"$c}}' {input} > {output}"
+
 if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS":
     rule metabat:
         input:
@@ -829,14 +837,6 @@ elif config["BINNING"] != "METABAT" and config["BINNING"] != "DAS":
             "touch {output}"
 
 if config["BINNING"] == "MAXBIN" or (config["BINNING"] == "DAS" and config["das"]["maxbin"]["run"]=="T" ):
-    rule maxbin_coverage:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt"
-        shell:
-            "awk -F '\\t' -v col=\"CONTIGS_SPADESvs_{wildcards.sample}_mapped_against_cross-assembly_sorted.bam\" 'NR==1{{for (i=1; i<=NF; i++) if ($i == col){{c=i; break}}}} NR>1{{print $1\"\\t\"$c}}' {input} > {output}"
-
     rule maxbin:
         """
         Please make sure that your abundance information is provided in the following format:
@@ -885,7 +885,9 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
     """
     rule concoct:
         input:
-            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt",
+            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt"
+            if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
+            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt",
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
