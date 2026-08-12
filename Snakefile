@@ -885,15 +885,17 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
     """
     rule concoct:
         input:
-            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt"
-            if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
-            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt",
+            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt",
+            # if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
+            # "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt",
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
             clustering="{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin_clustering_gt"+config["concoct"]["min_contig_length"]+".csv"
         params:
             "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin"
+        benchmark:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/concoct.benchmark"
         threads:
             int(config["concoct"]["threads"])
         conda:
@@ -1362,7 +1364,7 @@ rule summarize_gtdbtk:
     params:
         search_path="{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_\\*/summary.txt"
     output:
-        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_gtdb.tsv")
+        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_gtdb.tsv"
     shell:
         "Scripts/summary_gtdb.sh {params.search_path}"
 
@@ -1382,7 +1384,7 @@ rule summarize_checkM:
     params:
         search_path="{PROJECT}/runs/{run}/{sample}_data/binning/checkM_\\*/summary.txt"
     output:
-        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_checkM.tsv")
+        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_checkM.tsv"
     shell:
         "Scripts/summary_checkM.sh {params.search_path}"
 
