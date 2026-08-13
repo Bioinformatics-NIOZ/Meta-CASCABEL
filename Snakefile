@@ -1,9 +1,9 @@
 """
 Metagenomics Workflow for NIOZ MMBL.
-@Company: NIOZ                 
+@Company: NIOZ
 @Author: Alejandro Abdala and Julia Engelmann
-@Version: 4.5     
-@Last update: 16/04/2026                
+@Version: 4.5
+@Last update: 16/04/2026
 """
 
 run=config["RUN"]
@@ -788,16 +788,18 @@ rule datavzrd_bwa:
 rule total_coverage:
     '''
     This rule prepare files for concoct and maxbin (no diff mtx only in maxbin), by taking the sample 
-    and the total coverage, not the "totalAverage" which is col 3, now it takes col 4.   
+    and the total coverage, not the "totalAverage" which is col 3, now it takes col 4.
     '''
     input:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt"
     shell:
-        "awk -F'\\t' 'NR>1{{print $1\"\\t\"$4}}' {input} > {output}"
+        "awk -F'\\t' 'NR==1{{print $1\"\\t\"$4}} NR>1{{print $1\"\\t\"$4}}' {input} > {output}"
+        # "awk -F'\\t' 'NR>1{{print $1\"\\t\"$4}}' {input} > {output}"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
-        "awk -F'\\t' 'NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}'  {input} > {output}"
+        # "awk -F'\\t' 'NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}'  {input} > {output}"
+        "awk -F'\\t' 'NR==1{{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}} NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}' {input} > {output}"
 
 rule maxbin_coverage:
     input:
