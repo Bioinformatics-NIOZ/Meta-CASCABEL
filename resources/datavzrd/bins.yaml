@@ -22,7 +22,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -90,7 +90,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -116,7 +116,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -156,7 +156,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -279,7 +279,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -291,7 +291,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false
@@ -317,7 +317,7 @@ views:
             heatmap:
               scale: ordinal
               clamp: false
-              color-scheme: category20
+              color-scheme: viridis
               range: []
               aux-domain-columns: ~
           plot-view-legend: false

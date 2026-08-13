@@ -920,7 +920,7 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
         conda:
             "resources/envs/concoct.yaml"
         shell:
-            "extract_fasta_bins.py --output_path  {params} {input.assembly} {input.clustering} > {output.log}"
+            "extract_fasta_bins.py --output_path {params} {input.assembly} {input.clustering} > {output.log}"
 elif (config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]!="T") or (config["BINNING"] != "CONCOCT" and config["BINNING"] != "DAS"):
     rule skip_concoct:
         output:
