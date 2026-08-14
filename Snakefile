@@ -290,19 +290,23 @@ elif config["TAXONOMY"]["PROFILING"] == "ALL":
         shell:
             "touch {output}"
 
+"""
+SPADES has the option to also work with merged reads and IDBA always uses merged reads
+"""
+rule fq2fasta:
+    input:
+        read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
+        read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+    output:
+        "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq"
+    benchmark:
+        "{PROJECT}/runs/{run}/{sample}_data/trimmed/fq2fasta.benchmark"
+    conda:
+        "envs/idba.yaml"
+    shell:
+        "fq2fa --merge {input.read1_paired} {input.read2_paired} {output}"
+
 if config["ASSEMBLER"] == "SPADES":
-    rule fq2fasta:
-        input:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq"
-        benchmark:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/fq2fasta.benchmark"
-        conda:
-            "envs/spades.yaml"
-        shell:
-            "fq2fa --merge {input.read1_paired} {input.read2_paired} {output}"
     rule concat_single_reads:
         input:
             read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq",
@@ -414,18 +418,6 @@ if config["ASSEMBLER"] == "MEGAHIT":
             "mv {input.contig} {output.contigs} && ln -sr {output.contigs} {output.scaffolds}"
 
 if config["ASSEMBLER"] == "IDBA":
-    rule fq2fasta:
-        input:
-            read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-            tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
-            else []
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta"
-        benchmark:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/fq2fasta.benchmark"
-        shell:
-            "fq2fa --merge {input.read1_paired} {input.read2_paired} {output}"
     #IN order to run idba it is needed to make somechanges into the source code:
     #https://groups.google.com/forum/#!topic/hku-idba/NE2JXqNvTFY and
     #http://seqanswers.com/forums/showthread.php?t=29109
@@ -436,7 +428,7 @@ if config["ASSEMBLER"] == "IDBA":
     #For this reason, the pipe line uses my local installation, try to make it for all
     rule idba:
         input:
-            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fasta"
+            "{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq"
         output:
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/contig.fa",
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/scaffold.fa"
@@ -1861,16 +1853,17 @@ rule report:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.flagstat"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/sam-flagstat_cmds.log",
-        "{PROJECT}/runs/{run}/{sample}_data/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log",
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
+
+        # "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        # if config["BINNING"] == "METABAT" else
+        # "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        # if config["BINNING"] == "MAXBIN" else
+        # "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        # if config["BINNING"] == "CONCOCT" else
+        # "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        # if config["BINNING"] == "BINSANITY" else
+        # "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
+
         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
          if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else
          "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
