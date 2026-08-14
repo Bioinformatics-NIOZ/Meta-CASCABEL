@@ -77,7 +77,7 @@ gzip_input: "T"
 # The RUN variable can be set here or remain empty, in the latter case, the    #
 # user must assign this value via the command line --config RUN=User_run_name  #
 #------------------------------------------------------------------------------#
-RUN: "Test_differential_coverage_matrix_concoct"
+RUN: "Test_das_spades"
 
 #------------------------------------------------------------------------------#
 #                            Description                                       #
@@ -86,7 +86,7 @@ RUN: "Test_differential_coverage_matrix_concoct"
 # included on the final report. This field is not mandatory so it can remain   #
 # empty                                                                        #
 #------------------------------------------------------------------------------#
-description: "Testing differential coverage matrix CONCOCT"
+description: "Testing das and spades"
 
 #------------------------------------------------------------------------------#
 #                             Execution mode                                   #
@@ -129,10 +129,9 @@ interactive : "F"
 # threads               Number of threads to run sequali.                      #
 # extra_params          Extra parameters. See sequali --help for more info.    #
 #------------------------------------------------------------------------------#
-
 QC:
-  onRawReads: "F"
-  onTrimmedReads: "F"
+  onRawReads: "T"
+  onTrimmedReads: "T"
   threads: 10
   extra_params: ""
 
@@ -327,7 +326,7 @@ TAXONOMY:
 # contigs               If ASSEMBLER = "ASSEMBLED" supply file pointing to     #
 #                       contigs/scaffolds.                                     #
 #------------------------------------------------------------------------------#
-ASSEMBLER: "MEGAHIT"
+ASSEMBLER: "SPADES"
 contigs: ""
 
 #------------------------------------------------------------------------------#
@@ -515,7 +514,7 @@ jgi_summ:
 
 # The settings are more sensitive for DAS, if you don't use DAS make sure you change the settings to less sensitive
 # Binsanity and CONCOCT are the most memory inefficient
-BINNING: "CONCOCT"
+BINNING: "DAS"
 
 #------------------------------------------------------------------------------#
 #                       Unbinned conntigs                                      #
@@ -524,7 +523,7 @@ BINNING: "CONCOCT"
 # If this option is set to "T" (true) , a file with all the unbinned contigs   #
 # will be created.
 #------------------------------------------------------------------------------#
-CREATE_UNBINNED: "F"
+CREATE_UNBINNED: "T"
 
 #------------------------------------------------------------------------------#
 #                       MetaBAT2                                               #
