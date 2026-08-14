@@ -1368,7 +1368,7 @@ rule summarize_gtdbtk:
     params:
         search_path="{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_\\*/summary.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_gtdb.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_gtdb.tsv")
     shell:
         "Scripts/summary_gtdb.sh {params.search_path}"
 
@@ -1388,7 +1388,7 @@ rule summarize_checkM:
     params:
         search_path="{PROJECT}/runs/{run}/{sample}_data/binning/checkM_\\*/summary.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_checkM.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_checkM.tsv")
     shell:
         "Scripts/summary_checkM.sh {params.search_path}"
 
@@ -1397,7 +1397,7 @@ rule merge_checkM_gtdb_results:
         checkM="{PROJECT}/runs/{run}/{sample}_data/binning/summary_checkM.tsv",
         gtdb="{PROJECT}/runs/{run}/{sample}_data/binning/summary_gtdb.tsv"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/summary.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary.tsv")
     shell:
         "cat {input.gtdb} | "
         "awk -F\"\\t\" 'BEGIN{{OFS=\"\\t\"}} NR==FNR{{if(NR==1){{ header=\"GTDB_\"$3\"\\tGTDB_\"$4\"\\tGTDB_\"$5\"\\tGTDB_\"$6}} else{{bin[$1$2]=$3\"\\t\"$4\"\\t\"$5\"\\t\"$6}};next}}  BEGIN{{OFS=\"\\t\"}} {{if(FNR==1){{print $0,header}} else{{if(bin[$1$2]){{print $0,bin[$1$2]}}else{{print $0,\"Filtered\",\"-\",\"-\",\"-\"}}}}}}' "
@@ -1503,7 +1503,7 @@ rule summarize_coverage:
     params:
         abundance_folder="{PROJECT}/runs/{run}/{sample}_data/binning/"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_abundance.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_abundance.tsv")
     shell:
         "cat {params.abundance_folder}abundance*.tsv | grep  -v num_contigs | "
         "awk -F \"\\t\" 'FNR==NR{{{{h[$1$2]=$3\"\\t\"$4\"\\t\"$5}};next }} BEGIN{{OFS=\"\\t\"}} "
@@ -1608,7 +1608,7 @@ rule summarize_gc_prc:
     params:
         prc_folder="{PROJECT}/runs/{run}/{sample}_data/binning/"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/summary_abundance_coverage.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/summary_abundance_coverage.tsv")
     shell:
         "cat {params.prc_folder}gc_prc*.tsv |  "
         "awk -F \"\\t\" 'FNR==NR{{{{h[$1$2]=$3}};next }} BEGIN{{OFS=\"\\t\"}} "
@@ -1861,17 +1861,16 @@ rule report:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.flagstat"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/sam-flagstat_cmds.log",
-        ##"{PROJECT}/runs/{run}/{sample}_data/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log",
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        #if config["BINNING"] == "METABAT" else
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        #if config["BINNING"] == "MAXBIN" else
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        #if config["BINNING"] == "CONCOCT" else
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        #if config["BINNING"] == "BINSANITY" else
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
-        #"{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log",
+        "{PROJECT}/runs/{run}/{sample}_data/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log",
+        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "METABAT" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "MAXBIN" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "CONCOCT" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "BINSANITY" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
          if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else
          "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
@@ -1888,8 +1887,7 @@ rule report:
          # "{PROJECT}/runs/{run}/{sample}_data/binning/summary_abundance.tsv",
          "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
          if config["CREATE_UNBINNED"] == "T" else
-         # "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
-         # "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins.summary.tsv",
+         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
          "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt",
          "{PROJECT}/runs/{run}/tables/trimmomatic"
          if config["trimm"]["trimming"] == "T" else
