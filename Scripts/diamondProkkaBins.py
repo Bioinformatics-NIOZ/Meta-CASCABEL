@@ -47,7 +47,7 @@ with open(snakemake.output[0], "a") as outfile:
                 "--query",prokka_bacteria+file,
                 "--out",output_dir+"diamond/"+"bin."+number+".out",
                 "--threads",str(snakemake.config["diamond"]["threads"]),
-                "--taxonmap",str(snakemake.config["diamond"]["taxonmap"]),
+                # "--taxonmap",str(snakemake.config["diamond"]["taxonmap"]),
                 "--outfmt"#,str(snakemake.config["diamond"]["outfmt"])
                 ]+out_fmt+extra_params
                 try:

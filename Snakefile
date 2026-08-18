@@ -1681,6 +1681,8 @@ rule prokka_bins:
         "fna"
     benchmark:
         "{PROJECT}/runs/{run}/{sample}_data/binning/prokka"+config["BINNING"]+"_bins.benchmark"
+    conda:
+        "envs/prokka.yaml"
     script:
         "Scripts/annotateProkkaBins.py"
 
@@ -1734,6 +1736,8 @@ rule diamond_bins:
         "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
         if config["BINNING"] == "SEMIBIN" else
         "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+    conda:
+        "envs/diamond.yaml"
     script:
         "Scripts/diamondProkkaBins.py"
 
@@ -1779,7 +1783,7 @@ rule coverage_contigs_final_bins:
     output:
         "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt"
     shell:
-        "cat  {params.bin_folder}*.fna  | grep \"^>\" | sed 's/>// ; s/ /\t/g' | "
+        "cat {params.bin_folder}*.fna  | grep \"^>\" | sed 's/>// ; s/ /\t/g' | "
         " awk -F\"\\t\" 'NR==FNR{{h[$2]=$1;next}}BEGIN{{OFS=\"\\t\"; FS=\"\\t\"}}{{if(h[$1]){{print h[$1],$3}}}}' "
         "- {input.bwa} > {output}"
 
@@ -1843,10 +1847,6 @@ rule datavzrd_bins:
 
 rule report:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.flagstat"
-        if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/sam-flagstat_cmds.log",
-
         "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
         if config["BINNING"] == "METABAT" else
         "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
@@ -1864,11 +1864,13 @@ rule report:
          "{PROJECT}/runs/{run}/{sample}_data/taxonomy/all.taxonomy.out"
          if config["TAXONOMY"]["PROFILING"] == "ALL" else
          "{PROJECT}/runs/{run}/{sample}_data/no_tax.txt",
-         "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
+
          "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
          if config["CREATE_UNBINNED"] == "T" else
          "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
+
          "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt",
+
          "{PROJECT}/runs/{run}/tables/trimmomatic"
          if config["trimm"]["trimming"] == "T" else
          "{PROJECT}/runs/{run}/{sample}_data/no_trimm.txt",
@@ -1876,9 +1878,9 @@ rule report:
          "{PROJECT}/runs/{run}/tables/bins"
     output:
         temp("{PROJECT}/runs/{run}/{sample}_data/report_f.html")
-        # "{PROJECT}/runs/{run}/{sample}_data/report_f.html"
     shell:
         "touch {output}"
+
 # rule tune_report:
 #     input:
 #         "{PROJECT}/runs/{run}/{sample}_data/report.html"
