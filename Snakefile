@@ -868,13 +868,6 @@ elif (config["BINNING"] == "DAS" and config["das"]["maxbin"]["run"]!="T") or (co
             "touch {output}"
 
 if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]=="T"):
-    rule activate_concoct:
-        output:
-            concoct_activation="{PROJECT}/runs/{run}/concoct_activation.log"
-        conda:
-            "envs/concoct.yaml"
-        shell:
-            "{config[concoct][activation_cmd]} && echo {config[concoct][activation_cmd]} > {output}"
     """
     This rules try to follow the steps recommended by using CONCOCT according to
     the following documentation: https://concoct.readthedocs.io/en/latest/complete_example.html
@@ -1854,15 +1847,15 @@ rule report:
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/sam-flagstat_cmds.log",
 
-        # "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        # if config["BINNING"] == "METABAT" else
-        # "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        # if config["BINNING"] == "MAXBIN" else
-        # "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        # if config["BINNING"] == "CONCOCT" else
-        # "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        # if config["BINNING"] == "BINSANITY" else
-        # "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
+        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "METABAT" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "MAXBIN" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "CONCOCT" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        if config["BINNING"] == "BINSANITY" else
+        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
 
         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
          if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else

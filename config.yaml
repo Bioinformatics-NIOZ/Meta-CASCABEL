@@ -77,7 +77,7 @@ gzip_input: "T"
 # The RUN variable can be set here or remain empty, in the latter case, the    #
 # user must assign this value via the command line --config RUN=User_run_name  #
 #------------------------------------------------------------------------------#
-RUN: "Test_idba"
+RUN: "Test_prokka_diamond"
 
 #------------------------------------------------------------------------------#
 #                            Description                                       #
@@ -86,7 +86,7 @@ RUN: "Test_idba"
 # included on the final report. This field is not mandatory so it can remain   #
 # empty                                                                        #
 #------------------------------------------------------------------------------#
-description: "Testing idba"
+description: "Testing spades"
 
 #------------------------------------------------------------------------------#
 #                             Execution mode                                   #
@@ -326,7 +326,7 @@ TAXONOMY:
 # contigs               If ASSEMBLER = "ASSEMBLED" supply file pointing to     #
 #                       contigs/scaffolds.                                     #
 #------------------------------------------------------------------------------#
-ASSEMBLER: "IDBA"
+ASSEMBLER: "MEGAHIT"
 contigs: ""
 
 #------------------------------------------------------------------------------#
