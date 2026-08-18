@@ -1857,13 +1857,13 @@ if config["diamond"] == "T":
         output:
             "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
         shell:
-            "echo prokka and diamond have been executed > {output}"           
+            "echo 'prokka and diamond have been executed' > {output}"           
 else:
     rule skip_diamond_prokka:
         output:
             "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
         shell:
-            "echo prokka and diamond have not been executed > {output}"
+            "echo 'prokka and diamond have not been executed' > {output}"
 
 rule report:
     input:
