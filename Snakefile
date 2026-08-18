@@ -133,7 +133,7 @@ else:
         output:
             read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
             read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-            no_trimm="{PROJECT}/runs/{run}/{sample}_data/no_trimm.txt"
+            no_trimm="{PROJECT}/runs/{run}/{sample}_data/trimmed/no_trimm.txt"
         shell:
             """
             touch {output.no_trimm}
@@ -1600,147 +1600,6 @@ rule summarize_gc_prc:
         "{{if(FNR==1){{print $0,\"avg_gc\" }}else{{print $0,h[$1$2]}} }}' "
         " - {input.summary} > {output}"
 
-if config["CREATE_UNBINNED"] == "T":
-    rule get_unbinned_contigs:
-        input:
-            bin_table="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_summary.tsv",
-            assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
-            if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt"
-        shell:
-            "cat {input.bin_table} | cut -f1 | grep -v -F -w -f - {input.assembly} | grep \"^>\" | sed 's/^>//' > {output}"
-    rule create_unbinned_fasta:
-        input:
-            unbinned_list="{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt",
-            assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
-            if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
-        shell:
-            "seqtk subseq {input.assembly} {input.unbinned_list} > {output}"
-else:
-    rule skip_create_unbinned:
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt"
-        shell:
-            "echo 'CREATE_UNBINNED == F' > {output}"
-
-rule prokka_bins:
-    input:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/metabat.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
-        "{PROJECT}/runs/{run}/{sample}_data/binning/checkM/summary.txt"
-    output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-    params:
-        output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
-        file_ext= "fa"
-        if config["BINNING"] == "METABAT" or config["BINNING"] == "CONCOCT" or config["BINNING"] == "SEMIBIN" or config["BINNING"] == "DAS" else
-        "fasta"
-        if config["BINNING"] == "BINSANITY" else
-        "fna"
-    benchmark:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/prokka"+config["BINNING"]+"_bins.benchmark"
-    conda:
-        "envs/prokka.yaml"
-    script:
-        "Scripts/annotateProkkaBins.py"
-
-rule diamond_bins:
-    input:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-    output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-    params:
-        output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
-        file_ext= "faa"
-    benchmark:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-    conda:
-        "envs/diamond.yaml"
-    script:
-        "Scripts/diamondProkkaBins.py"
-
 rule rename_Final_bins:
     input:
         bin_table="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
@@ -1773,19 +1632,6 @@ rule rename_Final_bins:
         "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/new_names.txt"
     shell:
         "Scripts/renameFinalBins.sh {params.bin_folder} {params.bin_ext} {params.smp} {params.out_dir} {output}"  
-
-rule coverage_contigs_final_bins:
-    input:
-        final_bins="{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/new_names.txt",
-        bwa="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
-    params:
-        bin_folder="{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/"
-    output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt"
-    shell:
-        "cat {params.bin_folder}*.fna  | grep \"^>\" | sed 's/>// ; s/ /\t/g' | "
-        " awk -F\"\\t\" 'NR==FNR{{h[$2]=$1;next}}BEGIN{{OFS=\"\\t\"; FS=\"\\t\"}}{{if(h[$1]){{print h[$1],$3}}}}' "
-        "- {input.bwa} > {output}"
 
 rule summarize_final_bins:
     input:
@@ -1845,46 +1691,205 @@ rule datavzrd_bins:
     wrapper:
         "v4.7.2/utils/datavzrd"
 
+rule coverage_contigs_final_bins:
+    input:
+        final_bins="{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/new_names.txt",
+        bwa="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
+    params:
+        bin_folder="{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/"
+    output:
+        "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt"
+    shell:
+        "cat {params.bin_folder}*.fna  | grep \"^>\" | sed 's/>// ; s/ /\t/g' | "
+        " awk -F\"\\t\" 'NR==FNR{{h[$2]=$1;next}}BEGIN{{OFS=\"\\t\"; FS=\"\\t\"}}{{if(h[$1]){{print h[$1],$3}}}}' "
+        "- {input.bwa} > {output}"
+
+if config["CREATE_UNBINNED"] == "T":
+    rule get_unbinned_contigs:
+        input:
+            bin_table="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_summary.tsv",
+            assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt"
+        shell:
+            "cat {input.bin_table} | cut -f1 | grep -v -F -w -f - {input.assembly} | grep \"^>\" | sed 's/^>//' > {output}"
+    rule create_unbinned_fasta:
+        input:
+            unbinned_list="{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt",
+            assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
+            if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
+        shell:
+            "seqtk subseq {input.assembly} {input.unbinned_list} > {output}"
+else:
+    rule skip_create_unbinned:
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt"
+        shell:
+            "echo 'CREATE_UNBINNED == F' > {output}"
+if config["diamond"] == "T":
+    rule prokka_bins:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/metabat.log"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
+            "{PROJECT}/runs/{run}/{sample}_data/binning/checkM/summary.txt"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+        params:
+            output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
+            file_ext= "fa"
+            if config["BINNING"] == "METABAT" or config["BINNING"] == "CONCOCT" or config["BINNING"] == "SEMIBIN" or config["BINNING"] == "DAS" else
+            "fasta"
+            if config["BINNING"] == "BINSANITY" else
+            "fna"
+        benchmark:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/prokka"+config["BINNING"]+"_bins.benchmark"
+        conda:
+            "envs/prokka.yaml"
+        script:
+            "Scripts/annotateProkkaBins.py"
+    rule diamond_bins:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        params:
+            output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
+            file_ext= "faa"
+        benchmark:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+            if config["BINNING"] == "SEMIBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
+        conda:
+            "envs/diamond.yaml"
+        script:
+            "Scripts/diamondProkkaBins.py"
+    rule prokka_diamond_flag:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "METABAT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "MAXBIN" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "CONCOCT" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
+        shell:
+            "echo prokka and diamond have been executed > {output}"           
+else:
+    rule skip_diamond_prokka:
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
+        shell:
+            "echo prokka and diamond have not been executed > {output}"
+
 rule report:
     input:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log",
-
+        # Taxonomy
         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
-         if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else
-         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
-         if config["TAXONOMY"]["PROFILING"] == "KAIJU" else
-         "{PROJECT}/runs/{run}/{sample}_data/taxonomy/all.taxonomy.out"
-         if config["TAXONOMY"]["PROFILING"] == "ALL" else
-         "{PROJECT}/runs/{run}/{sample}_data/no_tax.txt",
-
-         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
-         if config["CREATE_UNBINNED"] == "T" else
-         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
-
-         "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt",
-
-         "{PROJECT}/runs/{run}/tables/trimmomatic"
-         if config["trimm"]["trimming"] == "T" else
-         "{PROJECT}/runs/{run}/{sample}_data/no_trimm.txt",
-         "{PROJECT}/runs/{run}/tables/bwa",
-         "{PROJECT}/runs/{run}/tables/bins"
+        if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else
+        "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
+        if config["TAXONOMY"]["PROFILING"] == "KAIJU" else
+        "{PROJECT}/runs/{run}/{sample}_data/taxonomy/all.taxonomy.out"
+        if config["TAXONOMY"]["PROFILING"] == "ALL" else
+        "{PROJECT}/runs/{run}/{sample}_data/no_tax.txt",
+        # Report
+        "{PROJECT}/runs/{run}/tables/trimmomatic"
+        if config["trimm"]["trimming"] == "T" else
+        "{PROJECT}/runs/{run}/{sample}_data/trimmed/no_trimm.txt",
+        "{PROJECT}/runs/{run}/tables/bwa",
+        "{PROJECT}/runs/{run}/tables/bins",
+        # Contig coverage per bin
+        "{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/contig_coverage.txt",
+        # Unbinned
+        "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
+        if config["CREATE_UNBINNED"] == "T" else
+        "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
+        # Diamond
+        "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
     output:
         temp("{PROJECT}/runs/{run}/{sample}_data/report_f.html")
     shell:
         "touch {output}"
-
-# rule tune_report:
-#     input:
-#         "{PROJECT}/runs/{run}/{sample}_data/report.html"
-#     output:
-#         "{PROJECT}/runs/{run}/{sample}_data/report_f.html"
-#     script:
-#         "Scripts/tuneReport_all.py"

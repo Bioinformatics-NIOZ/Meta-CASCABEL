@@ -785,8 +785,9 @@ prokka:
 # https://github.com/bbuchfink/diamond/wiki/3.-Command-line-options            #
 #------------------------------------------------------------------------------#
 diamond:
+  run: "T"
   db: "/export/lv13/databases/ncbi_20260601/diamond/nr.prok.dmnd"
-  # taxonmap: "/export/lv13/databases/ncbi_20260601/diamond/nr.prok.dmnd"
+  taxonmap: "/export/lv13/databases/ncbi_20260601/diamond/nr.prok.dmnd"
   outfmt: "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle"
   threads: "30"
   extra_params: "--sensitive"
