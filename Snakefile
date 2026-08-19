@@ -769,16 +769,6 @@ rule coverage_concoct_maxbin:
         # "awk -F'\\t' 'NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}'  {input} > {output}"
         "awk -F'\\t' 'NR==1{{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}} NR > 1 {{for(x=1;x<=NF;x++) if(x == 1 || (x >= 4 && x % 2 == 0)) printf \"%s\", $x (x == NF || x == (NF-1) ? \"\\n\":\"\\t\")}}' {input} > {output}"
 
-"""
-rule maxbin_coverage:
-    input:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
-    output:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt"
-    shell:
-        "awk -F '\\t' -v col=\"{config[ANALYSIS]}_{config[ASSEMBLER]}vs_{wildcards.sample}_mapped_against_cross-assembly_sorted.bam\" 'NR==1{{for (i=1; i<=NF; i++) if ($i == col){{c=i; break}}}} NR>1{{print $1\"\\t\"$c}}' {input} > {output}"
-"""
-
 if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS":
     rule metabat:
         input:
