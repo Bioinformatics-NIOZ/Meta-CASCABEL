@@ -2,8 +2,8 @@
 Metagenomics Workflow for NIOZ MMBL.
 @Company: NIOZ
 @Author: Alejandro Abdala and Julia Engelmann
-@Version: 4.5
-@Last update: 16/04/2026
+@Version: 5
+@Last update: 19/08/2026
 """
 
 run=config["RUN"]
@@ -646,30 +646,6 @@ rule bwa_mem:
         "nice -{config[bwa][nice]} bwa mem -t {config[bwa][threads]} {params} "
         "{input.read1_paired} {input.read2_paired} "
         "| samtools view --threads {config[bwa][threads]} -b - | samtools sort - -o {output} --threads {config[bwa][threads]}"
-
-
-"""
-rule bwa_mem_new:
-    input:
-        r1="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-        r2="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-        allidx=expand("{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_assembly.bwt", PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run)
-    output:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.bam___"
-    benchmark:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/bwamem.benchmark"
-    params:
-        "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_assembly"
-    threads:
-        int(config["bwa"]["threads"])
-    conda:
-        "envs/bwa_sam.yaml"
-    shell:
-        "nice -{config[bwa][nice]} bwa mem -t {config[bwa][threads]} {params} "
-        "{input.read1_paired} {input.read2_paired} "
-        "| samtools view --threads {config[bwa][threads]} -b - | samtools sort - -o {output} --threads {config[bwa][threads]}"
-"""
-
 
 rule bwa_mem_mtx:
     input:
