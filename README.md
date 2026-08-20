@@ -98,20 +98,20 @@ Go through the rest of the configuration file and choose your options before run
 
 *Activating environment*
 
-  module load anaconda/2024.02
-  conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
-  export GTDBTK_DATA_PATH="/export/lv13/databases/gtdb/release232"
+>  module load anaconda/2024.02
+>  conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
+>  export GTDBTK_DATA_PATH="/export/lv13/databases/gtdb/release232"
 
 *dry run*
 
- snakemake --configfile config.yaml -j2 -c35 --use-conda --conda-frontend conda -np
+> snakemake --configfile config.yaml -j2 -c35 --use-conda --conda-frontend conda -np
 
 *Run*
 
- snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda 
+> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda 
 
 *Generating report file*
-  snakemake --configfile config.yaml --report report_name.zip
+> snakemake --configfile config.yaml --report report_name.zip
 
 
 **Output files structure**
