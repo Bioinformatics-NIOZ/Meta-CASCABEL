@@ -92,14 +92,14 @@ Go through the rest of the configuration file and choose your options before run
 
 **Run the pipeline using SLURM**
 
-  sbatch hpc.sh
+>  sbatch hpc.sh
 
 **Run the pipeline without SLURM**
 
 *Activating environment*
 
 >  module load anaconda/2024.02
-> conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
+>  conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
 >  export GTDBTK_DATA_PATH="/export/lv13/databases/gtdb/release232"
 
 *dry run*
