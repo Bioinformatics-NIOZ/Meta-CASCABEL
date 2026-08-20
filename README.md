@@ -99,7 +99,7 @@ Go through the rest of the configuration file and choose your options before run
 *Activating environment*
 
 >  module load anaconda/2024.02
->  conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
+> conda activate /export/lv10/user/jberkhout/.conda/envs/snake_env_test
 >  export GTDBTK_DATA_PATH="/export/lv13/databases/gtdb/release232"
 
 *dry run*
