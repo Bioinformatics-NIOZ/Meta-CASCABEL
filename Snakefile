@@ -170,132 +170,6 @@ if config["QC"]["onTrimmedReads"].lower() == "t":
         shell:
             "sequali --outdir {params.outdir} --html  sequali.html --json sequali.json -t {config[QC][threads]}  {config[QC][extra_params]}  {input}"
 
-# TAXONOMIC PROFILING
-if config["TAXONOMY"]["PROFILING"] == "KRAKEN" or config["TAXONOMY"]["PROFILING"] == "ALL":
-    rule kraken:
-        """
-            Execute Kraken taxonomy profiling
-        """
-        input:
-            fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq"
-        params:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out"
-        threads:
-            int(config["TAXONOMY"]["KRAKEN"]["threads"])
-        shell:
-            "kraken --preload --db {config[TAXONOMY][KRAKEN][db]} --paired {input.fw} {input.rv} "
-            "--threads {config[TAXONOMY][KRAKEN][threads]} {config[TAXONOMY][KRAKEN][extra_params]} > {output}"
-#--gzip-compressed
-    rule prepare_kraken_report:
-        """
-            Prepare the input file for addTaxonNames script
-        """
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out"
-        output:
-            temp("{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out.tmp")
-        shell:
-            "cat {input} | cut -f1,2,3 > {output}"
-    rule kraken_labels:
-        """
-            Prepare the input file for addTaxonNames script
-        """
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out.tmp"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out.labels"
-        shell:
-            "kaiju-addTaxonNames -t {config[TAXONOMY][KRAKEN][nodes]} -n {config[TAXONOMY][KRAKEN][names]} "
-            "-i {input} {config[TAXONOMY][taxonomy_path]}  -o {output}"
-    rule kraken_report:
-        """
-            Prepare the input file for addTaxonNames script
-        """
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out.labels"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
-        shell:
-            "kaiju2table -t {config[TAXONOMY][KRAKEN][nodes]} -n {config[TAXONOMY][KRAKEN][names]} "
-            " {config[TAXONOMY][taxonomy_path]}  -o {output} {input}"
-
-if config["TAXONOMY"]["PROFILING"] == "KAIJU" or config["TAXONOMY"]["PROFILING"] == "ALL":
-    rule kaiju:
-        """
-            Execute Kaiju taxonomy profiling
-        """
-        input:
-            fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
-            rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq"
-            if config["TAXONOMY"]["KRAKEN"]["raw_reads"] == "Y" else "{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq"
-        params:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out"
-        threads:
-            int(config["TAXONOMY"]["KAIJU"]["threads"])
-        conda:
-            "envs/kaiju.yaml"
-        shell:
-            "kaiju -i {input.fw} -j {input.rv} "
-            " -t {config[TAXONOMY][KAIJU][nodes]}  -f {config[TAXONOMY][KAIJU][db]} "
-            "-z {config[TAXONOMY][KAIJU][threads]} {config[TAXONOMY][KAIJU][extra_params]} -o {output}"
-    rule kaiju_labels:
-        """
-            addTaxonLabels for kaiju
-        """
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.labels"
-        conda:
-            "envs/kaiju.yaml"
-        shell:
-            "kaiju-addTaxonNames -t {config[TAXONOMY][KAIJU][nodes]} -n {config[TAXONOMY][KAIJU][names]} "
-            "-i {input} {config[TAXONOMY][taxonomy_path]}  -o {output}"
-    rule kaiju_report:
-        """
-            addTaxonLabels for kaiju
-        """
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.labels"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
-        conda:
-            "envs/kaiju.yaml"
-        shell:
-           "kaiju2table -t {config[TAXONOMY][KAIJU][nodes]} -n {config[TAXONOMY][KAIJU][names]} "
-            " {config[TAXONOMY][taxonomy_path]}  -o {output} {input}"
-
-if config["TAXONOMY"]["PROFILING"] not in "KRAKEN KAIJU ALL":
-    rule create_taxo_out:
-        """
-            As there is no taxonomy profiling touch one file to generate a "silly" file
-        """
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/no_tax.txt"
-        shell:
-            "touch {output}"
-
-elif config["TAXONOMY"]["PROFILING"] == "ALL":
-    rule merge_taxonomy_outs:
-        """
-            Merge the output of the three taxonomic profiler into one single outfile
-        """
-        input:
-            kraken="{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.out",
-            kaiju="{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/taxonomy/all.taxonomy.out"
-        shell:
-            "touch {output}"
-
 """
 SPADES has the option to also work with merged reads and IDBA always uses merged reads
 """
@@ -805,21 +679,42 @@ elif config["BINNING"] != "METABAT" and config["BINNING"] != "DAS":
             "touch {output}"
 
 if config["BINNING"] == "MAXBIN" or (config["BINNING"] == "DAS" and config["das"]["maxbin"]["run"]=="T" ):
+    rule maxbin_coverage:
+        input:
+            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"] + "_" + config["ASSEMBLER"]+"_{coverage_sample}_depth_avg_maxbin.txt"
+        params:
+            col=config["ANALYSIS"] + "_" + config["ASSEMBLER"]+"vs_{coverage_sample}_mapped_against_cross-assembly_sorted.bam"
+        shell:
+            """
+            awk -F '\\t' -v col="{params.col}" 'NR == 1 {{for (i = 1; i <= NF; i++) {{if ($i == col) {{c = i;break}}}}print $1 "\\t" $c}}NR > 1 {{print $1 "\\t" $c}}' {input} > {output}
+            """
+    rule maxbin_abund_list:
+        input:
+            expand("{PROJECT}/runs/{run}/{{sample}}_data/bwa-mem/"+config["ANALYSIS"] + "_" + config["ASSEMBLER"]+"_{coverage_sample}_depth_avg_maxbin.txt", PROJECT=config["PROJECT"], run=run, coverage_sample=config["SAMPLES"])
+        output:
+            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"] + "_" + config["ASSEMBLER"]+"_abund_list.txt"
+        shell:
+            "printf '%s\\n' {input} > {output}"
     rule maxbin:
         """
         Please make sure that your abundance information is provided in the following format:
         (contig header)\t(abundance)
         """
         input:
-            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt",
-            # if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
-            # "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg_maxbin.txt",
+            depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth_avg.txt"
+            if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
+            "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_abund_list.txt",
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
             log="{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
         params:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin"
+            abundance="-abund"
+            if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
+            "-abund_list",
+            outdir="{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin"
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/maxbin.benchmark"
         threads:
@@ -828,7 +723,7 @@ if config["BINNING"] == "MAXBIN" or (config["BINNING"] == "DAS" and config["das"
             "maxbin_v2.2.7"
         shell:
             "run_MaxBin.pl -contig {input.assembly} "
-            "-abund  {input.depth} -out {params} -thread {config[maxbin][threads]} "
+            "{params.abundance} {input.depth} -out {params.outdir} -thread {config[maxbin][threads]} "
             "-prob_threshold {config[maxbin][prob_threshold]} -markerset {config[maxbin][markerset]} "
             "-min_contig_length {config[maxbin][min_contig_length]}  "
             "{config[maxbin][plotmarker]} {config[maxbin][extra_params]} > {output.log}"
@@ -838,7 +733,6 @@ elif (config["BINNING"] == "DAS" and config["das"]["maxbin"]["run"]!="T") or (co
             log="{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
         shell:
             "touch {output}"
-
 if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]=="T"):
     """
     This rules try to follow the steps recommended by using CONCOCT according to
@@ -869,7 +763,7 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
     we only use the clustering file to DAS to create new bins. NOT anymore! now we run 
     checkM for all the methods
     """
-    rule extract_concoct_bins:
+    rule std_concoct_bins:
         input:
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
@@ -938,7 +832,7 @@ if config["BINNING"] == "SEMIBIN" or (config["BINNING"] == "DAS" and config["das
         input:
             depth="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_mapped_against_cross-assembly_sorted.bam"
             if config["bwa"]["differential_coverage_matrix"] == "F"
-            else expand("{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"vs_{sample}_mapped_against_cross-assembly_sorted.bam", PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run),
+            else "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"vs_{sample}_mapped_against_cross-assembly_sorted.bam",
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
@@ -1702,6 +1596,7 @@ else:
             "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt"
         shell:
             "echo 'CREATE_UNBINNED == F' > {output}"
+
 if config["diamond"]["run"] == "T":
     rule prokka_bins:
         input:
@@ -1713,10 +1608,10 @@ if config["diamond"]["run"] == "T":
             if config["BINNING"] == "CONCOCT" else
             "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
             if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/SemiBinRun.log"
             if config["BINNING"] == "SEMIBIN" else
             "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
-            "{PROJECT}/runs/{run}/{sample}_data/binning/checkM/summary.txt"
+            "{PROJECT}/runs/{run}/tables/stats_bins.tsv"
         output:
             "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
             if config["BINNING"] == "METABAT" else
@@ -1816,6 +1711,8 @@ if config["diamond"]["run"] == "T":
             if config["BINNING"] == "CONCOCT" else
             "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
             if config["BINNING"] == "BINSANITY" else
+            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
+            if config["BINNING"] == "SEMIBIN" else
             "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
         output:
             "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
@@ -1834,18 +1731,8 @@ rule cleanup:
     shell:
         "touch {output}"
 
-
 rule report:
     input:
-        # Taxonomy
-        "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kraken.taxonomy.report"
-        if config["TAXONOMY"]["PROFILING"] == "KRAKEN" else
-        "{PROJECT}/runs/{run}/{sample}_data/taxonomy/kaiju.taxonomy.out.report"
-        if config["TAXONOMY"]["PROFILING"] == "KAIJU" else
-        "{PROJECT}/runs/{run}/{sample}_data/taxonomy/all.taxonomy.out"
-        if config["TAXONOMY"]["PROFILING"] == "ALL" else
-        "{PROJECT}/runs/{run}/{sample}_data/no_tax.txt",
-
         # Report
         "{PROJECT}/runs/{run}/tables/trimmomatic"
         if config["trimm"]["trimming"] == "T" else
@@ -1860,8 +1747,10 @@ rule report:
         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
         if config["CREATE_UNBINNED"] == "T" else
         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
+
         # Diamond
         "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt",
+
         # Cleanup
         "{PROJECT}/runs/{run}/{sample}_data/cleanUp_flag.txt"
     output:
