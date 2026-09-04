@@ -32,6 +32,26 @@
 PROJECT: ""
 
 #------------------------------------------------------------------------------#
+#                       RUN                                                    #
+#=======================DESCRIPTION============================================#
+# Name of the RUN - Only use alphanumeric characters and don't use spaces.     #
+# This argument helps the user to execute different runs (pipeline execution)  #
+# with the same input data but with different parameters (ideally).            #
+# The RUN variable can be set here or remain empty, in the latter case, the    #
+# user must assign this value via the command line --config RUN=User_run_name  #
+#------------------------------------------------------------------------------#
+RUN: ""
+
+#------------------------------------------------------------------------------#
+#                       Description                                            #
+#=======================DESCRIPTION============================================#
+# Brief description for the pipeline. Any description written here will be     #
+# included on the final report. This field is not mandatory so it can remain   #
+# empty                                                                        #
+#------------------------------------------------------------------------------#
+description: ""
+
+#------------------------------------------------------------------------------#
 #                       SAMPLES                                                #
 #=======================DESCRIPTION============================================#
 # SAMPLES/Libraries you will like to include on the analysis                   #
@@ -69,26 +89,6 @@ input_files: ""
 # if the input files are regular fastq files                                   #
 #------------------------------------------------------------------------------#
 gzip_input: "F"
-
-#------------------------------------------------------------------------------#
-#                       RUN                                                    #
-#=======================DESCRIPTION============================================#
-# Name of the RUN - Only use alphanumeric characters and don't use spaces.     #
-# This argument helps the user to execute different runs (pipeline execution)  #
-# with the same input data but with different parameters (ideally).            #
-# The RUN variable can be set here or remain empty, in the latter case, the    #
-# user must assign this value via the command line --config RUN=User_run_name  #
-#------------------------------------------------------------------------------#
-RUN: ""
-
-#------------------------------------------------------------------------------#
-#                       Description                                            #
-#=======================DESCRIPTION============================================#
-# Brief description for the pipeline. Any description written here will be     #
-# included on the final report. This field is not mandatory so it can remain   #
-# empty                                                                        #
-#------------------------------------------------------------------------------#
-description: ""
 
 #------------------------------------------------------------------------------#
 #                       Execution mode                                         #
