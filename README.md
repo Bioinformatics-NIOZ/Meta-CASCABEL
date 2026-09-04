@@ -114,7 +114,7 @@ If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) acco
 
 *dry run*
 
-> snakemake --configfile config.yaml -p
+> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda -n
 
 *Run*
 
