@@ -17,7 +17,7 @@ The pipeline creates different output files which allow the user to explore the 
 
 **Download or clone the repository**
 
-> git clone -b MetaCASCABEL_v5 https://github.com/AlejandroAb/Meta-CASCABEL
+> git clone -b MetaCASCABEL_v5 https://github.com/Bioinformatics-NIOZ/Meta-CASCABEL
 
 **Required input files**
 
