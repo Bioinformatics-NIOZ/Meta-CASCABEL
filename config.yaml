@@ -113,7 +113,7 @@ interactive : "F"
 #------------------------------------------------------------------------------#
 
 #------------------------------------------------------------------------------#
-#                       Quality control                                        #
+#                       Quality control using Sequali                          #
 # rule: sequali and sequali_trimmed_reads                                      #
 #=======================DESCRIPTION============================================#
 # Sequence quality metrics for FASTQ and uBAM files.                           #
