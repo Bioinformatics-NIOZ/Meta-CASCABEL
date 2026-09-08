@@ -224,7 +224,8 @@ ANALYSIS: ""
 # contigs               If ASSEMBLER = "ASSEMBLED" supply file pointing to     #
 #                       contigs/scaffolds                                      #
 #=======================NOTE===================================================#
-# After selecting an assembly tool, you can fine tune the options below.       #
+# After selecting an assembly tool, you can fine tune the options in the       #
+# sections below.                                                              #
 #------------------------------------------------------------------------------#
 ASSEMBLER: ""
 contigs: ""
