@@ -141,17 +141,20 @@ You can set the name to anything you want
 │           │   ├── read1_singles.fq
 │           │   ├── read2_paired.fq
 │           │   └── read2_singles.fq
+│           │ 
 │           ├── assembly_<ASSEMBLER> 
 │           │   ├── <SAMPLE>_contigs.fasta   # Assembly - contigs
 │           │   ├── <SAMPLE>_scaffolds.fasta # Assembly - scaffolds (if available)
 │           │   ├── <SAMPLE>_<ANALYSIS>_complete.fasta # Assembly before being split (when SPLIT_assembly: T)
 │           │   └── quast  # Assembly statistics
+│           │ 
 │           ├── bwa-mem  #Assembly mapping against raw reads
 │           │   ├── <ANALYSIS>_<ASSEMBLER>_depth.txt  # depth coverage
 │           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.bam # bam file (when differential_coverage_matrix: F)
 │           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.flagstat # stats
 │           │   ├── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.bam # bam file (when differential_coverage_matrix: T)
 │           │   └── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.flagstat # stats file
+│           │ 
 │           ├── binning #The location for the bins vary per method 
 │           │   ├── abundance.<method>.tsv  #Information about the bin abundance per method
 │           │   ├── binsanity
@@ -181,11 +184,12 @@ You can set the name to anything you want
 │           │   │   ├── NIOZ114-2.fna
 │           │   │   └── NIOZ114-3.fna
 │           │   └── FinalBins.summary.tsv
+│           │ 
 │           └── unbinned
 │               ├── unbinned_contigs_list.txt # List of unbinned contigs
 │               └── unbinned.fasta # fasta file with unbinned contigs
 └── samples
-    ├── <SAMPLE>
+    └── <SAMPLE>
         ├── benchmark
         │   ├── init_structure.benchmark
         │   └── sequali.benchmark
