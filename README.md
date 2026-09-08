@@ -24,12 +24,29 @@ The pipeline creates different output files which allow the user to explore the 
 The pipeline is designed to analyze one or more metagenomes.
 For each metagenome you should supply the paired end raw reads:
 
-Forward raw reads (fastq or fastq.gz)
-Reverse raw reads (fastq or fastq.gz)
+* Forward raw reads (fastq or fastq.gz)
+* Reverse raw reads (fastq or fastq.gz)
 
 When using unzipped reads make sure to set 'gzip_input' to 'F' in config.yaml, or to 'T' when working with zipped reads.
 If you want to analyze pre trimmed reads, you can supply these as input and then change 'trimming' in the configfile to 'F'.
 In order to only perform the binning, you can also supply a fasta file containing your assembly. In such case, you also need to supply the raw data.
+
+
+**Edit configuration file**
+
+To run the script you need to go through the configuration file (config.yaml). 
+
+Some mandatory options are left empty as default:
+* PROJECT
+* RUN
+* Input configuration (explained below)
+* ANALYSIS
+* ASSEMBLER
+* BINNING
+
+Make sure to go through all these options, otherwise the script won't run. 
+
+IMPORTANT! If you run the pipeline on SLURM set 'interactive' to 'F'
 
 **Configure the input files**
 
@@ -81,28 +98,13 @@ NIOZ118 /export/lv4/projects/workshop_2023/S10_Assembly/rawdata_1/NIOZ118_R1.fas
 NIOZ130 /export/lv4/projects/workshop_2023/S10_Assembly/rawdata_1/NIOZ130_R1.fastq.gz   /export/lv4/projects/workshop_2023/S10_Assembly/rawdata_1/NIOZ130_R2.fastq.gz
 ```
 
-**Edit configuration file**
+**Run Metacascabel on the HPC (i.e. Laplace)**
 
-To run the script you need to go through the configuration file (config.yaml). 
-
-Some mandatory options are left empty as default:
-* PROJECT
-* RUN
-* Input configuration (explained above)
-* ANALYSIS
-* ASSEMBLER
-* BINNING
-
-Make sure to go through all these options, otherwise the script won't run. 
-
-IMPORTANT! If you run the pipeline on SLURM set 'interactive' to 'F'
-
-**Run the pipeline using SLURM**
-
-If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) according to your needs and available recources
 >  sbatch hpc.sh
 
-**Run the pipeline without SLURM**
+If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) according to your needs and available recources
+
+**Run Metacascabel on an interactive server (i.e. ada)**
 
 *Activating environment*
 
@@ -118,13 +120,15 @@ If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) acco
 
 *Run*
 
+> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda
+
 Set -j (number of jobs) and -c (number of cpu's) according to your needs and available recources
-> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda 
 
 *Generating report file*
 
-You can set the name to anything you want
 > snakemake --configfile config.yaml --report report_name.zip
+
+You can set the name to anything you want
 
 **Output files structure**
 
