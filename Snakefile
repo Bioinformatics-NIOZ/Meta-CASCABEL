@@ -1553,6 +1553,12 @@ else:
         shell:
             "echo 'CREATE_UNBINNED == F' > {output}"
 
+rule cleanup:
+    output:
+        temp("{PROJECT}/runs/{run}/{sample}_data/cleanUp_flag.txt")
+    shell:
+        "touch {output}"
+
 rule report:
     input:
         # Report

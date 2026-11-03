@@ -58,7 +58,7 @@ description: ""
 # Same sample names used with input.txt script                                 #
 # Include all the names between quotes, and comma separated                    #
 #------------------------------------------------------------------------------#
-SAMPLES: []
+SAMPLES: [""]
 
 #------------------------------------------------------------------------------#
 #                       INPUT FILES                                            #
