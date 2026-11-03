@@ -2,8 +2,8 @@
 Metagenomics Workflow for NIOZ MMBL.
 @Company: NIOZ
 @Author: Alejandro Abdala, Julia Engelmann and Juliette Berkhout
-@Version: 5
-@Last update: 19/08/2026
+@Version: 5.1
+@Last update: 30/10/2026
 """
 
 run=config["RUN"]

@@ -118,10 +118,6 @@ def remove_files(file_path, log):
     else:
         remove_file(semibin_dir, log)
 
-    # checkM
-    
-    # gtdbtk
-
 def main():
     with open(snakemake.output[0], "w") as log:
         if snakemake.config["remove_intermediate_output"] == "F":
