@@ -75,9 +75,9 @@ input_files: ""
 
 1. Create a 'input.txt' file (do: nano input.txt). The filename can be anything but in this example, we use 'input.txt'.
 2. Add one sample per line. Each line must contain three tab-separated columns:
-    a. Sample name
-    b. Absolute path to the forward reads
-    c. Absolute path to the reverse reads
+    * Sample name
+    * Absolute path to the forward reads
+    * Absolute path to the reverse reads
 3. Add the sample names to 'SAMPLES' in config.yaml. The names must be identical to the sample names in the first column of 'input.txt'.
 4. Leave 'fw_reads:' and 'rv_reads:' empty.
 5. Enter the name of the '.txt' file after 'input_files:'.
