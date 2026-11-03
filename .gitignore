@@ -1,0 +1,17 @@
+# Ignore everything
+
+*
+
+# But allow these:
+!.gitignore
+!config.yaml
+!hpc.sh
+!Snakefile
+!env.yaml
+!README.md
+!Scripts/
+!Scripts/**
+!resources/
+!resources/**
+!envs/
+!envs/**

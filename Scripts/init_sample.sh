@@ -2,7 +2,7 @@
 #needs 3 arguments
 #$1 name of the project
 #$2 name of the sample
-#$3 fw reads o just reads
+#$3 fw reads or just reads
 #$4 rv reads
 #set -e
 # Any subsequent(*) commands which fail will cause the shell script to exit immediately

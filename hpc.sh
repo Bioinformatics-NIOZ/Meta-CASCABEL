@@ -1,0 +1,15 @@
+#!/bin/sh
+#SBATCH --partition=HMEM
+#SBATCH --nodes=1
+#SBATCH --mail-user=aabdala@nioz.nl
+#SBATCH --mail-type=FAIL,BEGIN,END,TIME_LIMIT_80
+#SBATCH --time=5-10:00:00
+#SBATCH --cpus-per-task=100
+#SBATCH --mem=528G    #Default Mem
+
+module load anaconda/2024.02
+conda activate snakemake_v7.14.2
+export GTDBTK_DATA_PATH="/export/lv13/databases/gtdb/release232"
+
+snakemake --configfile config.yaml  -j2 -c100 --use-conda --conda-frontend conda 
+snakemake --configfile config.yaml --report report.hpc.zip
