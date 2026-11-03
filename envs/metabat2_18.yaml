@@ -1,8 +1,8 @@
-name: kaiju
+name: metabat2
 channels:
   - conda-forge
   - bioconda
   - defaults
 
 dependencies:
-  - kaiju
+  - metabat2=2.18

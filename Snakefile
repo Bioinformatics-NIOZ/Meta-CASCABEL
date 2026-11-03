@@ -2,14 +2,14 @@
 Metagenomics Workflow for NIOZ MMBL.
 @Company: NIOZ
 @Author: Alejandro Abdala, Julia Engelmann and Juliette Berkhout
-@Version: 5
-@Last update: 19/08/2026
+@Version: 5.1
+@Last update: 30/10/2026
 """
 
 run=config["RUN"]
 rule all:
     input:
-        expand("{PROJECT}/runs/{run}/{sample}_data/report_f.html", PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run)
+        expand("{PROJECT}/runs/{run}/{sample}_data/cleanUp_log.txt", PROJECT=config["PROJECT"],sample=config["SAMPLES"], run=run)
 
 # SETTING UP DIRECTORY STRUCTURE
 if len(config["SAMPLES"])==1 and len(config["fw_reads"])>0 and len(config["rv_reads"])>0:
@@ -36,7 +36,7 @@ elif len(config["input_files"])>2 and len(config["SAMPLES"])>=1:
 
 
 # QUALITY CONTROL ON RAW READS
-if config["QC"]["onRawReads"].lower() == "t":
+if config["sequali"]["onRawReads"].lower() == "t":
     rule sequali:
         """
         Runs QC with sequali on raw reads
@@ -51,13 +51,13 @@ if config["QC"]["onRawReads"].lower() == "t":
         params:
             outdir="{PROJECT}/samples/{sample}/qc/sequali/"
         threads:
-            int(config["QC"]["threads"])
+            int(config["sequali"]["threads"])
         benchmark:
             "{PROJECT}/samples/{sample}/benchmark/sequali.benchmark"
         conda:
             "sequali_v1.0.2"
         shell:
-            "sequali --outdir {params.outdir} --html  sequali.html --json sequali.json -t {config[QC][threads]}  {config[QC][extra_params]}  {input}"
+            "sequali --outdir {params.outdir} --html  sequali.html --json sequali.json -t {config[sequali][threads]}  {config[sequali][extra_params]}  {input}"
 
 # TRIMM READS
 # run trimmomatic to remove adapter contamination and trim very low quality parts (ends) of the reads.
@@ -68,7 +68,7 @@ if config["trimm"]["trimming"].lower() == "t":
         input:
             fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq" if config["gzip_input"] == "F" else "{PROJECT}/samples/{sample}/rawdata/fw.fastq.gz",
             rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq" if config["gzip_input"] == "F" else "{PROJECT}/samples/{sample}/rawdata/rv.fastq.gz",
-            tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["QC"]["onRawReads"].lower() == "t"
+            tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["sequali"]["onRawReads"].lower() == "t"
             else []
         output:
             read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
@@ -132,7 +132,7 @@ else:
         input:
             fw="{PROJECT}/samples/{sample}/rawdata/fw.fastq" if config["gzip_input"] == "F" else "{PROJECT}/samples/{sample}/rawdata/fw.fastq.gz",
             rv="{PROJECT}/samples/{sample}/rawdata/rv.fastq" if config["gzip_input"] == "F" else "{PROJECT}/samples/{sample}/rawdata/rv.fastq.gz",
-            tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["QC"]["onRawReads"].lower() == "t"
+            tmp_seq="{PROJECT}/samples/{sample}/qc/sequali/sequali.html" if config["sequali"]["onRawReads"].lower() == "t"
             else []
         output:
             read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
@@ -150,7 +150,7 @@ else:
             """
 
 # QUALITY CONTROL ON TRIMMED READS
-if config["QC"]["onTrimmedReads"].lower() == "t":
+if config["sequali"]["onTrimmedReads"].lower() == "t":
     rule sequali_trimmed_reads:
         input:
             r1="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
@@ -164,16 +164,16 @@ if config["QC"]["onTrimmedReads"].lower() == "t":
         benchmark:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali.benchmark"
         threads:
-            int(config["QC"]["threads"])
+            int(config["sequali"]["threads"])
         conda:
             "sequali_v1.0.2"
         shell:
-            "sequali --outdir {params.outdir} --html  sequali.html --json sequali.json -t {config[QC][threads]}  {config[QC][extra_params]}  {input}"
+            "sequali --outdir {params.outdir} --html  sequali.html --json sequali.json -t {config[sequali][threads]}  {config[sequali][extra_params]}  {input}"
 
 """
 SPADES has the option to also work with merged reads and IDBA always uses merged reads
 """
-rule fq2fasta:
+rule merge_reads:
     input:
         read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
         read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
@@ -187,11 +187,11 @@ rule fq2fasta:
         "fq2fa --merge {input.read1_paired} {input.read2_paired} {output}"
 
 if config["ASSEMBLER"] == "SPADES":
-    rule concat_single_reads:
+    rule merge_singles:
         input:
             read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq",
             read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq",
-            tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
+            tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["sequali"]["onTrimmedReads"].lower() == "t"
             else []
         output:
             "{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq"
@@ -274,7 +274,7 @@ if config["ASSEMBLER"] == "MEGAHIT":
         input:
             read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
             read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
-            tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["QC"]["onTrimmedReads"].lower() == "t"
+            tmp_seq="{PROJECT}/runs/{run}/{sample}_data/trimmed/sequali/sequali.html" if config["sequali"]["onTrimmedReads"].lower() == "t"
             else []
         output:
             "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/final.contigs.fa"
@@ -321,7 +321,7 @@ if config["ASSEMBLER"] == "IDBA":
         conda:
             "idba_v1.1.3"
         shell:
-            "idba_ud -r {input} -o {params} "
+            "idba_ud -r {input} -o {params} --mink {config[idba][mink]} --maxk {config[idba][maxk]} "
             "--step {config[idba][step]} --num_threads {config[idba][threads]} {config[idba][extra_params]}"
     #As spades output contigs.fasta and scaffolds.fasta, we standarize those
     #names in order to decress complexity on downstream rules
@@ -349,8 +349,8 @@ if config["SPLIT_ASSEMBLY"] == "T":
     """
     This option will split the assembled reads into smaller chuncks.
     In order to do not affect the downstream rules (previously implemented)
-    the splitted contig file is renamed as the original contig file and the original
-    is renamed as contigs.complete.fasta at the end
+    the splitted contig file is renamed as the original contig/scaffolds file and the original
+    is renamed as contigs/scaffolds.complete.fasta at the end
     """
     rule split_assembly:
         input:
@@ -388,14 +388,6 @@ else:
             flag="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/split_flag.txt"
         shell:
             "echo \"{config[ANALYSIS]}.fasta has not been splitted\" > {output.flag}"
-
-rule quast_libs:
-    input:
-        "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta."
-    output:
-        temp("{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/quast/quast_lib_config.txt")
-    shell:
-        "export PYTHONPATH=/opt/Downloads/biolinux/quast-4.6.3/ && touch {output}"
 
 rule quast_contigs:
     input:
@@ -501,12 +493,12 @@ rule bwa_index:
     params:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_assembly"
     conda:
-        "bwa_samtool"
+        "bwa-fastalign_v1.0.0_samtools_v1.24"
     shell:
-        "bwa index -p {params} {input.assembly}"
-#nice -5 bwa mem -t 4 $folderOut/cross-assembly $fq1 $fq2 \
-#   | samtools view -b - \
-#   | samtools sort - -o $fol/mapped_against_cross-assembly_sorted.bam
+        "bwa-fastalign index -p {params} {input.assembly}"
+    #nice -5 bwa mem -t 4 $folderOut/cross-assembly $fq1 $fq2 \
+    #   | samtools view -b - \
+    #   | samtools sort - -o $fol/mapped_against_cross-assembly_sorted.bam
 rule bwa_mem:
     input:
         read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
@@ -521,9 +513,9 @@ rule bwa_mem:
     threads:
         int(config["bwa"]["threads"])
     conda:
-        "bwa_samtool"
+        "bwa-fastalign_v1.0.0_samtools_v1.24"       
     shell:
-        "nice -{config[bwa][nice]} bwa mem -t {config[bwa][threads]} {params} "
+        "nice -{config[bwa][nice]} bwa-fastalign mem -t {config[bwa][threads]} {params} "
         "{input.read1_paired} {input.read2_paired} "
         "| samtools view --threads {config[bwa][threads]} -b - | samtools sort - -o {output} --threads {config[bwa][threads]}"
 
@@ -544,7 +536,7 @@ rule bwa_mem_mtx:
     threads:
         int(config["bwa"]["threads"])
     conda:
-        "bwa_samtool"
+        "bwa-fastalign_v1.0.0_samtools_v1.24"        
     script:
         "Scripts/bwa_mem.py"
 
@@ -564,7 +556,7 @@ rule sam_flags:
     params:
         idx="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"
     conda:
-        "bwa_samtool"
+        "bwa-fastalign_v1.0.0_samtools_v1.24"
     shell:
         "samtools flagstat --threads {config[bwa][threads]} {input} > {output}"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
@@ -587,7 +579,7 @@ rule summarize_bam:
     params:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+""
     conda:
-        "metabat_v2.12.1"
+        "metabat_v2.18"
     shell:
         "jgi_summarize_bam_contig_depths --outputDepth {output} {config[jgi_summ][extra_params]} {input}"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
@@ -664,7 +656,7 @@ if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS":
         threads:
             int(config["metabat2"]["threads"])
         conda:
-            "metabat_v2.12.1"
+            "metabat_v2.18"
         shell:
             "metabat2 -o {params} -i {input.assembly} -t {config[metabat2][threads]} "
             "-m {config[metabat2][min_contig]} -a {input.depth} "
@@ -674,7 +666,7 @@ if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS":
 elif config["BINNING"] != "METABAT" and config["BINNING"] != "DAS":
     rule skip_metabat:
         output:
-            log="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/metabat.log"
+            temp("{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/metabat.log")
         shell:
             "touch {output}"
 
@@ -730,7 +722,7 @@ if config["BINNING"] == "MAXBIN" or (config["BINNING"] == "DAS" and config["das"
 elif (config["BINNING"] == "DAS" and config["das"]["maxbin"]["run"]!="T") or (config["BINNING"] != "MAXBIN" and config["BINNING"] != "DAS"):
     rule skip_maxbin:
         output:
-            log="{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
+            temp("{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log")
         shell:
             "touch {output}"
 if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]=="T"):
@@ -779,8 +771,8 @@ if config["BINNING"] == "CONCOCT" or ( config["BINNING"] == "DAS" and config["da
 elif (config["BINNING"] == "DAS" and config["das"]["concoct"]["run"]!="T") or (config["BINNING"] != "CONCOCT" and config["BINNING"] != "DAS"):
     rule skip_concoct:
         output:
-            log="{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log",
-            log2="{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin_clustering_gt"+config["concoct"]["min_contig_length"]+".csv"
+            log=temp("{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log"),
+            log2=temp("{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/bin_clustering_gt"+config["concoct"]["min_contig_length"]+".csv")
         shell:
             "touch {output.log} && touch {output.log2}"
 
@@ -807,8 +799,7 @@ if config["BINNING"] == "BINSANITY" or (config["BINNING"] == "DAS" and config["d
             bin_directory="{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/",
             #final bins will be at  {bin_directory}/BinSanity-Final-bins/final_Bin-xx.fna
             #also they can be found in the form final_Bin-xx_refined-xx.fna
-            assembly="{sample}_scaffolds.fasta"
-            if config["ANALYSIS"] == "SCAFFOLDS" else "{sample}_contigs.fasta"
+            assembly="{sample}_scaffolds.fasta" if config["ANALYSIS"] == "SCAFFOLDS" else "{sample}_contigs.fasta"
         output:
             log="{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
         threads:
@@ -816,14 +807,15 @@ if config["BINNING"] == "BINSANITY" or (config["BINNING"] == "DAS" and config["d
         conda: 
             "binsanity_v0.5.4"
         shell:
-            "Binsanity-wf -f {params.contig_directory} -l {params.assembly} -c {input.depth} -o {params.bin_directory} --binPrefix  final "
-            #"/export/data/aabdala/utils/BInSanity/BinSanity-master/bin/Binsanity-wf -f {params.contig_directory} -l {params.assembly} -c {input.depth} -o {params.bin_directory} --binPrefix  final "
-            "-p {config[binsanity][preference]} -x {config[binsanity][min_contig_length]} --threads {config[binsanity][threads]} "
-            "{config[binsanity][extra_params]}"
+            """
+            Binsanity-wf -f {params.contig_directory} -l {params.assembly} -c {input.depth} -o {params.bin_directory} --binPrefix  final \
+            -p {config[binsanity][preference]} -x {config[binsanity][min_contig_length]} --threads {config[binsanity][threads]} \
+            {config[binsanity][extra_params]}
+            """
 elif (config["BINNING"] == "DAS" and config["das"]["binsanity"]["run"]!="T") or (config["BINNING"] != "BINSANITY" and config["BINNING"] != "DAS"):
     rule skip_bin_sanity:
         output:
-            log="{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
+            temp("{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log")
         shell:
             "touch {output}"
 
@@ -847,20 +839,14 @@ if config["BINNING"] == "SEMIBIN" or (config["BINNING"] == "DAS" and config["das
             "semibin_v2.4.0"
         shell:
             """
-            SemiBin2 single_easy_bin \
-                -i {input.assembly} \
-                -b {input.depth} \
-                -o {params} \
-                --compression none \
-                -t {config[semibin][threads]} \
-                --minfasta-kbs {config[semibin][min_bin_size]} \
-                --max-edges {config[semibin][max_edge]} \
-                {config[semibin][extra_params]}
+            SemiBin2 single_easy_bin -i {input.assembly} -b {input.depth} -o {params} \
+                --compression none -t {config[semibin][threads]} --minfasta-kbs {config[semibin][min_bin_size]} \
+                --max-edges {config[semibin][max_edge]} --min-len {config[semibin][min_len]} {config[semibin][extra_params]}
             """  
 elif (config["BINNING"] == "DAS" and config["das"]["semibin"]["run"]!="T") or (config["BINNING"] != "SEMIBIN" and config["BINNING"] != "DAS"):
     rule skip_semibin:
         output:
-            log="{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/SemiBinRun.log"
+            temp("{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/SemiBinRun.log")
         shell:
             "touch {output}"
 
@@ -929,7 +915,7 @@ else:
         params:
             "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log"
+            temp("{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log")
         shell:
             "touch {output}"
 
@@ -945,7 +931,7 @@ rule checkM_metabat2:
     threads:
         int(config["checkM"]["threads"])
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -961,7 +947,7 @@ rule checkM_maxbin:
     threads:
         int(config["checkM"]["threads"])
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -976,7 +962,7 @@ rule checkM_concoct:
     output:
         out_file="{PROJECT}/runs/{run}/{sample}_data/binning/checkM_concoct/summary.txt"
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -988,11 +974,11 @@ rule checkM_binsanity:
         out_folder="{PROJECT}/runs/{run}/{sample}_data/binning/checkM_binsanity/",
         bin_ext="fna"
     threads:
-        int(config["checkM"]["threads"])         
+        int(config["checkM"]["threads"])
     output:
         out_file="{PROJECT}/runs/{run}/{sample}_data/binning/checkM_binsanity/summary.txt"
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -1008,7 +994,7 @@ rule checkM_semibin2:
     threads:
         int(config["checkM"]["threads"])
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -1029,7 +1015,7 @@ rule checkM_das:
     threads:
         int(config["checkM"]["threads"])
     conda:
-        "checkm_v0.5.4"
+        "checkm_v1.2.5"
     shell:
         "checkm lineage_wf -f {output.out_file} -t  {config[checkM][threads]} -x {params.bin_ext} {config[checkM][extra_params]} {params.bin_folder} {params.out_folder} "
 
@@ -1164,36 +1150,6 @@ rule gtdbtk_das:
     shell:
         "gtdbtk classify_wf --genome_dir  {params.bin_folder} --out_dir {params.out_folder}  -x {params.bin_ext} --cpus {config[gtdbtk][cpus]} {config[gtdbtk][extra_params]} > {output} "
 
-rule gtdbtk_bins:
-    input:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_metabat2/summary.txt"
-        if config["BINNING"] == "METABAT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_maxbin/summary.txt"
-        if config["BINNING"] == "MAXBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_concoct/summary.txt"
-        if config["BINNING"] == "CONCOCT" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_binsanity/summary.txt"
-        if config["BINNING"] == "BINSANITY" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_semibin2/summary.txt"
-        if config["BINNING"] == "SEMIBIN" else
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_das/summary.txt"
-    params:
-        dir="gtdbtk_metabat2"
-        if config["BINNING"] == "METABAT" else
-        "gtdbtk_maxbin"
-        if config["BINNING"] == "MAXBIN" else
-        "gtdbtk_concoct"
-        if config["BINNING"] == "CONCOCT" else
-        "gtdbtk_binsanity"
-        if config["BINNING"] == "BINSANITY" else
-        "gtdbtk_semibin2"
-        if config["BINNING"] == "SEMIBIN" else
-        "gtdbtk_das"
-    output:
-        out_file="{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk/summary.txt"
-    shell:
-        "ln -s ../{params.dir}/summary.txt {output}"
-
 rule summarize_gtdbtk:
     input:
         "{PROJECT}/runs/{run}/{sample}_data/binning/gtdbtk_metabat2/summary.txt"
@@ -1254,7 +1210,7 @@ rule bin_cvg_metabat2:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.metabat.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.metabat.tsv")
     shell:
         "Scripts/summary_coverage_metabat.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
 
@@ -1267,7 +1223,7 @@ rule bin_cvg_concoct:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.concoct.tsv" 
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.concoct.tsv")
     shell:
         "Scripts/summary_coverage_concoct.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
        
@@ -1280,7 +1236,7 @@ rule bin_cvg_maxbin:
         bin_ext="fasta",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.maxbin.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.maxbin.tsv")
     shell:
         "Scripts/summary_coverage_maxbin.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
  
@@ -1293,7 +1249,7 @@ rule bin_cvg_binsanity:
         bin_ext="fna",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.binsanity.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.binsanity.tsv")
     shell:
         "Scripts/summary_coverage_bs.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
 
@@ -1306,7 +1262,7 @@ rule bin_cvg_semibin2:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.semibin.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.semibin.tsv")
     shell:
         "Scripts/summary_coverage_semibin.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
  
@@ -1324,10 +1280,10 @@ rule bin_cvg_das:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/abundance.das.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/abundance.das.tsv")
     shell:
         "Scripts/summary_coverage_das.sh {params.bin_folder} {params.bin_ext} {params.coverage} {output}" 
- 
+
 rule summarize_coverage:
     input:
         abundance="{PROJECT}/runs/{run}/{sample}_data/binning/abundance.metabat.tsv"
@@ -1360,7 +1316,7 @@ rule gc_prc_metabat2:
         out_folder="{PROJECT}/runs/{run}/{sample}_data/binning/",
         bin_ext="fa"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.metabat.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.metabat.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext} {output}"
 
@@ -1373,7 +1329,7 @@ rule gc_prc_concoct:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.concoct.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.concoct.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext}  {output}"
 
@@ -1386,7 +1342,7 @@ rule gc_prc_maxbin:
         bin_ext="fasta",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.maxbin.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.maxbin.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext} {output}"
 
@@ -1399,7 +1355,7 @@ rule gc_prc_binsanity:
         bin_ext="fna",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.binsanity.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.binsanity.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext} {output}"
 
@@ -1411,10 +1367,10 @@ rule gc_prc_semibin2:
         out_folder="{PROJECT}/runs/{run}/{sample}_data/binning/",
         bin_ext="fa"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.semibin.tsv"
+       temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.semibin.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext} {output}"
-        
+
 rule gc_prc_das:
     input:
         "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
@@ -1429,7 +1385,7 @@ rule gc_prc_das:
         bin_ext="fa",
         coverage="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_depth.txt"
     output:
-        "{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.das.tsv"
+        temp("{PROJECT}/runs/{run}/{sample}_data/binning/gc_prc.das.tsv")
     shell:
         "Scripts/computeGC.sh {params.bin_folder} {params.bin_ext} {output}"
 
@@ -1562,7 +1518,7 @@ rule coverage_contigs_final_bins:
         "- {input.bwa} > {output}"
 
 if config["CREATE_UNBINNED"] == "T":
-    rule get_unbinned_contigs:
+    rule get_unbinned:
         input:
             bin_table="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/binTable.tsv"
             if config["BINNING"] == "METABAT" else
@@ -1578,12 +1534,12 @@ if config["CREATE_UNBINNED"] == "T":
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
-            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt"
+            "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_"+config["ANALYSIS"]+"_list.txt"
         shell:
             "cat {input.bin_table} | cut -f1 | grep -v -F -w -f - {input.assembly} | grep \"^>\" | sed 's/^>//' > {output}"
     rule create_unbinned_fasta:
         input:
-            unbinned_list="{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_contigs_list.txt",
+            unbinned_list="{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned_"+config["ANALYSIS"]+"_list.txt",
             assembly="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta"
             if config["ANALYSIS"] == "SCAFFOLDS" else "{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta"
         output:
@@ -1596,134 +1552,6 @@ else:
             "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt"
         shell:
             "echo 'CREATE_UNBINNED == F' > {output}"
-
-if config["diamond"]["run"] == "T":
-    rule prokka_bins:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/metabat.log"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/maxbin.log"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/concoct.log"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanityWf.log"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/SemiBinRun.log"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/das.log",
-            "{PROJECT}/runs/{run}/tables/stats_bins.tsv"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        params:
-            output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
-            file_ext= "fa"
-            if config["BINNING"] == "METABAT" or config["BINNING"] == "CONCOCT" or config["BINNING"] == "SEMIBIN" or config["BINNING"] == "DAS" else
-            "fasta"
-            if config["BINNING"] == "BINSANITY" else
-            "fna"
-        benchmark:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/prokka"+config["BINNING"]+"_bins.benchmark"
-        conda:
-            "prokka_v1.15.6"
-        script:
-            "Scripts/annotateProkkaBins.py"
-    rule diamond_bins:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.log"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        params:
-            output_dir="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/",
-            file_ext= "faa"
-        benchmark:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/prokka.benchmark"
-        conda:
-            "diamond_v2.2.5"
-        script:
-            "Scripts/diamondProkkaBins.py"
-    rule prokka_diamond_flag:
-        input:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "METABAT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "MAXBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "CONCOCT" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "BINSANITY" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-            if config["BINNING"] == "SEMIBIN" else
-            "{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/diamond.log"
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
-        shell:
-            "echo 'prokka and diamond have been executed' > {output}"           
-else:
-    rule skip_diamond_prokka:
-        output:
-            "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt"
-        shell:
-            "echo 'prokka and diamond have not been executed' > {output}"
 
 rule cleanup:
     output:
@@ -1746,16 +1574,100 @@ rule report:
         # Unbinned
         "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta"
         if config["CREATE_UNBINNED"] == "T" else
-        "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt",
-
-        # Diamond
-        "{PROJECT}/runs/{run}/{sample}_data/binning/diamond_prokka_flag.txt",
-
-        # Cleanup
-        "{PROJECT}/runs/{run}/{sample}_data/cleanUp_flag.txt"
+        "{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.txt"
     output:
         temp("{PROJECT}/runs/{run}/{sample}_data/report_f.html")
     shell:
         "touch {output}"
 
+rule tool_versions:
+    params:
+        tools = {
+            "binsanity": ["binsanity_v0.5.4", "binsanity"] if config["BINNING"] == "BINSANITY" or config["das"]["binsanity"]["run"] == "T" else None,
+            "concoct": ["concoct","concoct"] if config["BINNING"] == "CONCOCT" or config["das"]["concoct"]["run"] == "T" else None,
+            "das": ["dasTool_v1.1.5","das_tool"] if config["BINNING"] == "DAS" else None,
+            "fastalign": ["bwa-fastalign_v1.0.0_samtools_v1.24","bwa-fastalign"],
+            "samtools": ["bwa-fastalign_v1.0.0_samtools_v1.24","samtools"],
+            "idba": ["idba_v1.1.3","idba"] if config["ASSEMBLER"] == "IDBA" else None,
+            "maxbin": ["maxbin_v2.2.7","maxbin2"] if config["BINNING"] == "MAXBIN" or config["das"]["maxbin"]["run"] == "T" else None,
+            "megahit": ["megahit_v1.2.9","megahit"] if config["ASSEMBLER"] == "MEGAHIT" else None,
+            "metabat": ["metabat_v2.18","metabat2"] if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS" else None,
+            "quast": ["quast_v5.2.0","quast"],
+            "semibin": ["semibin_v2.4.0","semibin"] if config["BINNING"] == "SEMIBIN" or config["das"]["semibin"]["run"] == "T" else None,
+            "sequali": ["sequali_v1.0.2","sequali"] if config["sequali"]["onRawReads"]== "T" or config["sequali"]["onTrimmedReads"]== "T" else None,
+            "snakemake": ["snakemake_v7.14.2","snakemake"],
+            "spades": ["spades_v3.15.5","spades"] if config["ASSEMBLER"] == "SPADES" else None,
+            "trimmomatic": ["trimmomatic_v0.39","trimmomatic"] if config["trimm"]["trimming"] == "T" else None,
+        }
+    output:
+        "{PROJECT}/runs/{run}/{sample}_data/tool_versions.txt"
+    run:
+        with open(output[0], "w") as f:
+            f.write(f'{"Tool":<20} Version\n')
+        for x in params.tools.values(): 
+            if x is not None:
+                env = x[0]
+                tool = x[1]
+                shell("conda list -n {env} | awk '$1 == \"{tool}\" {{printf \"%-20s %s\\n\", $1, $2; exit}}' >> {output}")
 
+rule cleanup_zip:
+    input:
+        "{PROJECT}/runs/{run}/{sample}_data/report_f.html"
+    params:
+        read1_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_paired.fq",
+        read2_paired="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_paired.fq",
+        read1_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read1_singles.fq" if config["trimm"]["trimming"] == "T" else "",
+        read2_single="{PROJECT}/runs/{run}/{sample}_data/trimmed/read2_singles.fq" if config["trimm"]["trimming"] == "T" else "",
+
+        read12_singles="{PROJECT}/runs/{run}/{sample}_data/trimmed/all_singles.fq" 
+        if config["trimm"]["trimming"] == "T" and config["ASSEMBLER"] == "SPADES" else "",
+        reads_merged="{PROJECT}/runs/{run}/{sample}_data/trimmed/reads_merged.fastq" 
+        if config["spades"]["merge_paired_reads"] == "T" or config["ASSEMBLER"] == "IDBA" else "",
+
+        contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.fasta",
+        scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.fasta",
+
+        unsplitted_contigs="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_contigs.complete.fasta"
+        if config["ANALYSIS"] == "CONTIGS" and config["SPLIT_ASSEMBLY"] == "T" else "",
+        unsplitted_scaffolds="{PROJECT}/runs/{run}/{sample}_data/assembly_"+config["ASSEMBLER"]+"/{sample}_scaffolds.complete.fasta"
+        if config["ANALYSIS"] == "SCAFFOLDS" and config["SPLIT_ASSEMBLY"] == "T" else "",
+
+        metabat_bins="{PROJECT}/runs/{run}/{sample}_data/binning/metabat2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/*.fa" 
+        if config["BINNING"] == "METABAT" or config["BINNING"] == "DAS" else "",
+        maxbin_bins="{PROJECT}/runs/{run}/{sample}_data/binning/maxbin/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/*.fasta" 
+        if config["BINNING"] == "MAXBIN" or config["das"]["maxbin"]["run"] == "T" else "",
+        concoct_bins="{PROJECT}/runs/{run}/{sample}_data/binning/concoct/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/*.fa" 
+        if config["BINNING"] == "CONCOCT" or config["das"]["concoct"]["run"] == "T" else "",
+        binsanity_bins="{PROJECT}/runs/{run}/{sample}_data/binning/binsanity/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/BinSanity-Final-bins/*.fna"  
+        if config["BINNING"] == "BINSANITY" or config["das"]["binsanity"]["run"] == "T" else "",
+        semibin_bins="{PROJECT}/runs/{run}/{sample}_data/binning/semibin2/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/output_bins/*.fa" 
+        if config["BINNING"] == "SEMIBIN" or config["das"]["semibin"]["run"] == "T" else "",
+        das_bins="{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/DasOut_DASTool_bins/*.fa"
+        if config["BINNING"] == "DAS" else "",
+        das_output="{PROJECT}/runs/{run}/{sample}_data/binning/das/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"/*.faa*"
+        if config["BINNING"] == "DAS" else "",
+
+        final_bins="{PROJECT}/runs/{run}/{sample}_data/binning/FinalBins/*.fna",
+        
+        unbinned="{PROJECT}/runs/{run}/{sample}_data/unbinned/unbinned.fasta" if config["CREATE_UNBINNED"] == "T" else ""
+    output:
+        temp("{PROJECT}/runs/{run}/{sample}_data/cleanUp_zip_flag.txt")
+    shell:
+        """
+        for x in {params}; do 
+            if [ -s "$x" ] && [[ "$x" != *.gz ]]; then
+                gzip "$x"
+            fi 
+        done
+        
+        touch {output}
+        """
+
+rule cleanup_remove:
+    input:
+        "{PROJECT}/runs/{run}/{sample}_data/tool_versions.txt",
+        "{PROJECT}/runs/{run}/{sample}_data/cleanUp_zip_flag.txt"
+    output:
+        "{PROJECT}/runs/{run}/{sample}_data/cleanUp_log.txt"
+    script:
+        "Scripts/cleanUp.py"

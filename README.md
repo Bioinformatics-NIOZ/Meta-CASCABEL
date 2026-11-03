@@ -2,7 +2,7 @@
 
 Snakemake pipeline for assembly and binning of metagenomics reads.
 
-**Current version:** 5.0
+**Current version:** 5.1
 
 The pipeline creates different output files which allow the user to explore the data and results in a simple way, as well as facilitate downstream analysis based on the generated output files.
 
@@ -46,7 +46,7 @@ Some mandatory options are left empty as default:
 
 Make sure to go through all these options, otherwise the script won't run. 
 
-IMPORTANT! If you run the pipeline on SLURM set 'interactive' to 'F'
+IMPORTANT! If you run the pipeline on the HPC set 'interactive' to 'F'
 
 **Configure the input files**
 
@@ -57,10 +57,10 @@ There are two ways to configure the input files, depending on whether you are wo
 This method can be used when analysing one sample.
 
 Go to the config.yaml file and fill in the following:
-* Enter the name of your sample in 'SAMPLES'. 
-* Enter the absolute path to the forward reads in 'fw_reads:' between quotes.
-* Enter the absolute path to the reverse reads after 'rv_reads:' between quotes.
-* Leave 'input_files:' empty.
+1. Enter the name of your sample in 'SAMPLES'. 
+2. Enter the absolute path to the forward reads in 'fw_reads:' between quotes.
+3. Enter the absolute path to the reverse reads after 'rv_reads:' between quotes.
+4. Leave 'input_files:' empty.
 
 For example:
 ```yaml
@@ -73,14 +73,14 @@ input_files: ""
 
 *Multiple samples*
 
-* Create a 'input.txt' file. The filename can be anything but in this example, we use 'input.txt'.
-* Add one sample per line. Each line must contain three tab-separated columns:
-1. Sample name
-2. Absolute path to the forward reads
-3. Absolute path to the reverse reads
-* Add the sample names to 'SAMPLES' in config.yaml. The names must be identical to the sample names in the first column of 'input.txt'.
-* Leave 'fw_reads:' and 'rv_reads:' empty.
-* Enter the name of the '.txt' file after 'input_files:'.
+1. Create a 'input.txt' file (do: nano input.txt). The filename can be anything but in this example, we use 'input.txt'.
+2. Add one sample per line. Each line must contain three tab-separated columns:
+    * Sample name
+    * Absolute path to the forward reads
+    * Absolute path to the reverse reads
+3. Add the sample names to 'SAMPLES' in config.yaml. The names must be identical to the sample names in the first column of 'input.txt'.
+4. Leave 'fw_reads:' and 'rv_reads:' empty.
+5. Enter the name of the '.txt' file after 'input_files:'.
 
 An example of the config file:
 ```yaml
@@ -102,7 +102,7 @@ NIOZ130 /export/lv4/projects/workshop_2023/S10_Assembly/rawdata_1/NIOZ130_R1.fas
 
 >  sbatch hpc.sh
 
-If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) according to your needs and available recources
+If you open hpc.sh you can set -c (number of cpu's) according to your needs and available recources
 
 **Run Metacascabel on an interactive server (i.e. ada)**
 
@@ -116,13 +116,17 @@ If you open hpc.sh you can set -j (number of jobs) and -c (number of cpu's) acco
 
 *dry run*
 
-> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda -n
+> snakemake --configfile config.yaml -c 35 --use-conda --conda-frontend conda -n
 
 *Run*
 
-> snakemake --configfile config.yaml  -j2 -c35 --use-conda --conda-frontend conda
+> snakemake --configfile config.yaml -c 35 --use-conda --conda-frontend conda
 
-Set -j (number of jobs) and -c (number of cpu's) according to your needs and available recources
+*Continue a stopped run where it left off*
+
+> snakemake --configfile config.yaml -c 35 --use-conda --conda-frontend conda --rerun-triggers mtime
+
+Set -c (number of cpu's) according to your needs and available recources.
 
 *Generating report file*
 
@@ -137,45 +141,48 @@ You can set the name to anything you want
 ├── runs
 │   └── <RUN>
 │       └── <SAMPLE>_data
-│           ├── trimmed
-│           │   ├── sequali  # Quality Control result for trimmed reads
+│           │
+│           ├── cleanUp_log.txt         # List of all removed intermediate output files
+│           ├── tool_versions.txt       # List of all the used tools and their versions
+│           │
+│           │   ├── sequali             # Quality Control result for trimmed reads
 │           │   │   ├── sequali.html
 │           │   │   └── sequali.json
-│           │   ├── read1_paired.fq  # Trimmed reads
-│           │   ├── read1_singles.fq
-│           │   ├── read2_paired.fq
-│           │   └── read2_singles.fq
+│           │   ├── read1_paired.fq.gz  # Trimmed reads
+│           │   ├── read1_singles.fq.gz
+│           │   ├── read2_paired.fq.gz
+│           │   └── read2_singles.fq.gz
 │           │ 
 │           ├── assembly_<ASSEMBLER> 
-│           │   ├── <SAMPLE>_contigs.fasta   # Assembly - contigs
-│           │   ├── <SAMPLE>_scaffolds.fasta # Assembly - scaffolds (if available)
-│           │   ├── <SAMPLE>_<ANALYSIS>_complete.fasta # Assembly before being split (when SPLIT_assembly: T)
-│           │   └── quast  # Assembly statistics
+│           │   ├── <SAMPLE>_contigs.fasta.gz           # Assembly - contigs
+│           │   ├── <SAMPLE>_scaffolds.fasta.gz         # Assembly - scaffolds (if available)
+│           │   ├── <SAMPLE>_<ANALYSIS>_complete.fasta  # Assembly before being split (when SPLIT_assembly: T)
+│           │   ├── split_flag.txt                      # Contains the SPLIT_assembly flag
+│           │   └── quast                               # Assembly statistics
 │           │ 
-│           ├── bwa-mem  #Assembly mapping against raw reads
-│           │   ├── <ANALYSIS>_<ASSEMBLER>_depth.txt  # depth coverage
-│           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.bam # bam file (when differential_coverage_matrix: F)
-│           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.flagstat # stats
-│           │   ├── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.bam # bam file (when differential_coverage_matrix: T)
-│           │   └── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.flagstat # stats file
+│           ├── bwa-mem                                 # Assembly mapping against raw reads
+│           │   ├── <ANALYSIS>_<ASSEMBLER>_depth.txt    # depth coverage
+│           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.bam                 # Bam file (when differential_coverage_matrix: F)
+│           │   ├── <ANALYSIS>_<ASSEMBLER>_mapped_against_cross-assembly_sorted.flagstat            # Stats file
+│           │   ├── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.bam      # Bam file (when differential_coverage_matrix: T)
+│           │   └── <ANALYSIS>_<ASSEMBLER>vs_<SAMPLE>_mapped_against_cross-assembly_sorted.flagstat # Stats file
 │           │ 
-│           ├── binning #The location for the bins vary per method 
-│           │   ├── abundance.<method>.tsv  #Information about the bin abundance per method
+│           ├── binning                             # The location for the bins vary per method 
 │           │   ├── binsanity
 │           │   │   └── <ANALYSIS>_<ASSEMBLER>
-│           │   │       └── BinSanity-Final-bins  # BinSanity bins folder
+│           │   │       └── BinSanity-Final-bins    # BinSanity bins folder
 │           │   ├── concoct
-│           │   │   └── <ANALYSIS>_<ASSEMBLER>    # Concoct bins
+│           │   │   └── <ANALYSIS>_<ASSEMBLER>      # Concoct bins
 │           │   ├── das
 │           │   │   └── <ANALYSIS>_<ASSEMBLER>
-│           │   │       └──DasOut_DASTool_bins    # DASTool bins
+│           │   │       └──DasOut_DASTool_bins      # DASTool bins
 │           │   ├── maxbin
-│           │   │   └── <ANALYSIS>_<ASSEMBLER>    # MaxBin bins
+│           │   │   └── <ANALYSIS>_<ASSEMBLER>      # MaxBin bins
 │           │   ├── metabat2
-│           │   │   └── <ANALYSIS>_<ASSEMBLER>    # Metabat bins
+│           │   │   └── <ANALYSIS>_<ASSEMBLER>      # Metabat bins
 │           │   ├── semibin2
 │           │   │   └── <ANALYSIS>_<ASSEMBLER>    
-│           │   │       └── output_bins           # Semibin bins
+│           │   │       └── output_bins             # Semibin bins
 │           │   ├── checkM_<bin_method>
 │           │   │   └── summary.txt
 │           │   ├── gtdbtk_<bin_method>
@@ -190,8 +197,8 @@ You can set the name to anything you want
 │           │   └── FinalBins.summary.tsv
 │           │ 
 │           └── unbinned
-│               ├── unbinned_contigs_list.txt # List of unbinned contigs
-│               └── unbinned.fasta # fasta file with unbinned contigs
+│               ├── unbinned_contigs_list.txt   # List of unbinned contigs
+│               └── unbinned.fasta              # fasta file with unbinned contigs
 └── samples
     └── <SAMPLE>
         ├── benchmark
