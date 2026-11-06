@@ -402,7 +402,7 @@ quast:
 # differential_coverage_matrix       'T' A cross sample depth file is created  #            
 #                                    'F' A single sample depth file is created #
 #=======================NOTE===================================================#
-# The differential_coverage_matrix == T mode works for all binning tools exept #
+# The differential_coverage_matrix == T mode works for all binning tools except#
 # SemiBin2. Semibin2 will still perform binning in single sample mode          #
 #=======================INFORMATION============================================#
 # https://github.com/zzhofict/BWA-FastAlign                                    #
