@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition=HMEM
 #SBATCH --nodes=1
-#SBATCH --mail-user=juliette.berkhout@nioz.nl                                # Fill in your own email
+#SBATCH --mail-user=                                # Fill in your own email
 #SBATCH --mail-type=FAIL,BEGIN,END,TIME_LIMIT_80
 #SBATCH --time=5-10:00:00
 #SBATCH --cpus-per-task=100                         # Keep this on 100 to use a full node and avoid crashing

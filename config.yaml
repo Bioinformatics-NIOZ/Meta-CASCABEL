@@ -405,9 +405,9 @@ quast:
 # The differential_coverage_matrix == T mode works for all binning tools except#
 # SemiBin2. Semibin2 will still perform binning in single sample mode          #
 #=======================INFORMATION============================================#
-# https://github.com/zzhofict/BWA-FastAlign                                    #
+# https://bio-bwa.sourceforge.net/bwa.shtml                                    #
 # https://www.htslib.org/doc/1.10/samtools-flagstat.html                       #
-# Or do: bwa-fastalign                                                         #
+# Or do: bwa                                                                   #
 # Or do: samtools                                                              #
 #------------------------------------------------------------------------------#
 bwa:
