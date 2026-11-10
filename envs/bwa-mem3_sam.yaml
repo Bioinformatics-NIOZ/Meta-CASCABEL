@@ -1,0 +1,9 @@
+name: bwa-mem3_sam
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - bwa-mem3=0.16.0
+  - samtools=1.25

@@ -493,9 +493,9 @@ rule bwa_index:
     params:
         "{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"+config["ANALYSIS"]+"_"+config["ASSEMBLER"]+"_assembly"
     conda:
-        "bwa-fastalign_v1.0.0_samtools_v1.24"
+        "bwa_v0.7.19__samtools_v1.25"
     shell:
-        "bwa-fastalign index -p {params} {input.assembly}"
+        "bwa index -p {params} {input.assembly}"
     #nice -5 bwa mem -t 4 $folderOut/cross-assembly $fq1 $fq2 \
     #   | samtools view -b - \
     #   | samtools sort - -o $fol/mapped_against_cross-assembly_sorted.bam
@@ -513,9 +513,9 @@ rule bwa_mem:
     threads:
         int(config["bwa"]["threads"])
     conda:
-        "bwa-fastalign_v1.0.0_samtools_v1.24"       
+        "bwa_v0.7.19__samtools_v1.25"
     shell:
-        "nice -{config[bwa][nice]} bwa-fastalign mem -t {config[bwa][threads]} {params} "
+        "nice -{config[bwa][nice]} bwa mem -t {config[bwa][threads]} {params} "
         "{input.read1_paired} {input.read2_paired} "
         "| samtools view --threads {config[bwa][threads]} -b - | samtools sort - -o {output} --threads {config[bwa][threads]}"
 
@@ -536,7 +536,7 @@ rule bwa_mem_mtx:
     threads:
         int(config["bwa"]["threads"])
     conda:
-        "bwa-fastalign_v1.0.0_samtools_v1.24"        
+        "bwa_v0.7.19__samtools_v1.25"        
     script:
         "Scripts/bwa_mem.py"
 
@@ -556,7 +556,7 @@ rule sam_flags:
     params:
         idx="{PROJECT}/runs/{run}/{sample}_data/bwa-mem/"
     conda:
-        "bwa-fastalign_v1.0.0_samtools_v1.24"
+        "bwa_v0.7.19__samtools_v1.25"
     shell:
         "samtools flagstat --threads {config[bwa][threads]} {input} > {output}"
         if config["bwa"]["differential_coverage_matrix"].lower() == "f" else
@@ -1581,13 +1581,15 @@ rule report:
         "touch {output}"
 
 rule tool_versions:
+    input:
+        "{PROJECT}/runs/{run}/{sample}_data/report_f.html"
     params:
         tools = {
             "binsanity": ["binsanity_v0.5.4", "binsanity"] if config["BINNING"] == "BINSANITY" or config["das"]["binsanity"]["run"] == "T" else None,
             "concoct": ["concoct","concoct"] if config["BINNING"] == "CONCOCT" or config["das"]["concoct"]["run"] == "T" else None,
             "das": ["dasTool_v1.1.5","das_tool"] if config["BINNING"] == "DAS" else None,
-            "fastalign": ["bwa-fastalign_v1.0.0_samtools_v1.24","bwa-fastalign"],
-            "samtools": ["bwa-fastalign_v1.0.0_samtools_v1.24","samtools"],
+            "fastalign": ["bwa_v0.7.19__samtools_v1.25","bwa"],
+            "samtools": ["bwa_v0.7.19__samtools_v1.25","samtools"],
             "idba": ["idba_v1.1.3","idba"] if config["ASSEMBLER"] == "IDBA" else None,
             "maxbin": ["maxbin_v2.2.7","maxbin2"] if config["BINNING"] == "MAXBIN" or config["das"]["maxbin"]["run"] == "T" else None,
             "megahit": ["megahit_v1.2.9","megahit"] if config["ASSEMBLER"] == "MEGAHIT" else None,
@@ -1656,7 +1658,7 @@ rule cleanup_zip:
         """
         for x in {params}; do 
             if [ -s "$x" ] && [[ "$x" != *.gz ]]; then
-                gzip "$x"
+                gzip "$x" 
             fi 
         done
         
