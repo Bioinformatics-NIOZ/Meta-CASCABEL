@@ -29,7 +29,7 @@
 #=======================DESCRIPTION============================================#
 # The name of the project for which the pipe line will be executed.            #
 #------------------------------------------------------------------------------#
-PROJECT: "Small_metacascabel_test"
+PROJECT: ""
 
 #------------------------------------------------------------------------------#
 #                       RUN                                                    #
@@ -40,7 +40,7 @@ PROJECT: "Small_metacascabel_test"
 # The RUN variable can be set here or remain empty, in the latter case, the    #
 # user must assign this value via the command line --config RUN=User_run_name  #
 #------------------------------------------------------------------------------#
-RUN: "Test_spades_bwa_ada"
+RUN: ""
 
 #------------------------------------------------------------------------------#
 #                       Description                                            #
@@ -58,7 +58,7 @@ description: ""
 # Same sample names used with input.txt script                                 #
 # Include all the names between quotes, and comma separated                    #
 #------------------------------------------------------------------------------#
-SAMPLES: ["NIOZ114","NIOZ118"]
+SAMPLES: [""]
 
 #------------------------------------------------------------------------------#
 #                       INPUT FILES                                            #
@@ -77,7 +77,7 @@ SAMPLES: ["NIOZ114","NIOZ118"]
 #------------------------------------------------------------------------------#
 fw_reads: ""
 rv_reads: ""
-input_files: "input_test_set.txt"
+input_files: ""
 
 #------------------------------------------------------------------------------#
 #                       INPUT TYPE                                             #
@@ -106,7 +106,7 @@ interactive: "F"
 # files and directories at the end of the snakemake run.                       #
 # cleanUp_log.txt contains a list of all the removed files.                    #
 #------------------------------------------------------------------------------#
-remove_intermediate_output: "F"
+remove_intermediate_output: "T"
 
 ################################################################################
 #                       Specific Parameters Section                            #
@@ -139,8 +139,8 @@ remove_intermediate_output: "F"
 # Or do: sequali -h                                                            #
 #------------------------------------------------------------------------------#
 sequali:
-  onRawReads: "T"
-  onTrimmedReads: "T"
+  onRawReads: "F"
+  onTrimmedReads: "F"
   threads: 10
   extra_params: ""
 
@@ -219,7 +219,7 @@ trimm:
 # Not all assembly tools generate scaffolds, if you wan't to use scaffolds,    #
 # chose either SPADES or IDBA as assembly tool.                                #
 #------------------------------------------------------------------------------#
-ANALYSIS: "CONTIGS"
+ANALYSIS: ""
 
 #------------------------------------------------------------------------------#
 #                       Select assembly tool                                   #
@@ -235,7 +235,7 @@ ANALYSIS: "CONTIGS"
 # contigs               If ASSEMBLER = "ASSEMBLED" supply file pointing to     #
 #                       contigs/scaffolds                                      #
 #------------------------------------------------------------------------------#
-ASSEMBLER: "SPADES"
+ASSEMBLER: ""
 contigs: ""
 
 #------------------------------------------------------------------------------#
@@ -357,7 +357,7 @@ idba:
 # The original, unsplitted contig or scaffolds files will be renamed as:       #
 # contigs.complete.fasta or scaffolds.complete.fasta                           #
 #------------------------------------------------------------------------------#
-SPLIT_ASSEMBLY: "T"
+SPLIT_ASSEMBLY: "F"
 SPLIT_SIZE: 20000
 
 #------------------------------------------------------------------------------#
@@ -413,7 +413,7 @@ quast:
 bwa:
   nice: "5"
   threads: "12"
-  differential_coverage_matrix: "T"
+  differential_coverage_matrix: "F"
 
 #------------------------------------------------------------------------------#
 #                       jgi_summarize_bam_contig_depths                        #
@@ -451,7 +451,7 @@ jgi_summ:
 #   tool, using the options below.                                             #
 # - When using DAS, it will always run Metabat2 as one of the binning tools    #
 #------------------------------------------------------------------------------#
-BINNING: "DAS"
+BINNING: ""
 
 #------------------------------------------------------------------------------#
 #                       DAS Tool                                               #
@@ -488,8 +488,8 @@ das:
   search_engine: diamond
   extra_params: ""
   metabat:
-    gtdbtk_analysis: "T"
-    checkm_analysis: "T"
+    gtdbtk_analysis: "F"
+    checkm_analysis: "F"
   binsanity: 
     run: "F"
     gtdbtk_analysis: "F"
@@ -499,13 +499,13 @@ das:
    gtdbtk_analysis: "F"
    checkm_analysis: "F"
   maxbin: 
-    run: "T"
-    gtdbtk_analysis: "T"
-    checkm_analysis: "T"
+    run: "F"
+    gtdbtk_analysis: "F"
+    checkm_analysis: "F"
   semibin:
-    run: "T"
-    gtdbtk_analysis: "T"
-    checkm_analysis: "T"
+    run: "F"
+    gtdbtk_analysis: "F"
+    checkm_analysis: "F"
 
 #------------------------------------------------------------------------------#
 #                       MetaBAT2                                               #
@@ -670,7 +670,7 @@ semibin:
 # CREATE_UNBINNED       'T' obtain all unbinned contigs/scaffolds              #
 #                       'F' Don't obtain unbinned contigs/scaffolds            #
 #------------------------------------------------------------------------------#
-CREATE_UNBINNED: "T"
+CREATE_UNBINNED: "F"
 
 #------------------------------------------------------------------------------#
 #                       checkM lineage_wf                                      #
