@@ -36,12 +36,6 @@ def remove_files(file_path, log):
 
     # SPADES
     log.write("Starting SPADES cleanup\n")
-    """
-    Nog even terugkomen op de K/ situationne
-    """
-
-    # SPADES
-    log.write("Starting SPADES cleanup\n")
 
     spades_dir = os.path.join(file_path, "assembly_SPADES")
     spades_keep_list = ["*.benchmark","*.fasta.gz","*.txt","*.log","quast","quast/*","K*/final_contigs.fasta","K*/scaffolds.fasta"]
@@ -55,19 +49,6 @@ def remove_files(file_path, log):
             if any(fnmatch.fnmatch(os.path.relpath(f, spades_dir), pattern) for f in glob.glob(os.path.join(file, "**", "*"), recursive=True) for pattern in spades_keep_list):
                 continue
         remove_file(file, log)
-
-
-    """
-    spades_dir = os.path.join(file_path, "assembly_SPADES")
-    spades_keep_list = ["*.benchmark","*.fasta.gz","*.txt","*.log","quast","K*/final.contigs.fasta","K*/scaffolds.fasta"]
-    for file in glob.glob(os.path.join(spades_dir, "**", "*"),recursive=True):
-        relative_path = os.path.relpath(file, spades_dir)
-        if relative_path == "quast" or relative_path.startswith("quast" + os.sep):
-          continue
-        keep = any(fnmatch.fnmatch(relative_path, pattern)for pattern in spades_keep_list)
-        if not keep:
-            remove_file(file, log)
-    """
 
     # IDBA
     log.write("Starting IDBA cleanup\n")
