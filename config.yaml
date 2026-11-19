@@ -332,7 +332,7 @@ megahit:
 idba:
   mink: "20"
   maxk: "100"
-  step: "10"
+  step: "20"
   threads: "35"
   extra_params: ""
 
